@@ -562,25 +562,32 @@ function resolveTeams(mid){
   const m=KO_BY_ID[mid]; if(!m) return {hT:null,aT:null};
   return {hT:resolveSlot(m.s[0]),aT:resolveSlot(m.s[1])};
 }
-// Hardcoded group stage qualifiers (1st/2nd/3rd per group) from actual 2026 results
+// Group stage qualifiers (1st/2nd per group + relevant 3rd-place teams)
+// Sourced from actual final group standings.
 const GROUP_QUALIFIERS={
-  A:{1:"México",         2:"Sudáfrica",      3:"Corea del Sur"},
-  B:{1:"Canadá",         2:"Suiza",          3:"Bosnia"},
-  C:{1:"Marruecos",      2:"Brasil",         3:"Escocia"},
-  D:{1:"Estados Unidos", 2:"Turquía",        3:"Australia"},
-  E:{1:"Alemania",       2:"Costa de Marfil",3:"Ecuador"},
-  F:{1:"Países Bajos",   2:"Japón",          3:"Suecia"},
-  G:{1:"Bélgica",        2:"Egipto",         3:"Irán"},
-  H:{1:"España",         2:"Uruguay",        3:"Arabia Saudí"},
-  I:{1:"Francia",        2:"Senegal",        3:"Noruega"},
-  J:{1:"Argentina",      2:"Argelia",        3:"Austria"},
-  K:{1:"Portugal",       2:"Colombia",       3:"RD Congo"},
-  L:{1:"Inglaterra",     2:"Croacia",        3:"Panamá"},
+  A:{1:"México",          2:"Sudáfrica"},
+  B:{1:"Suiza",           2:"Canadá"},
+  C:{1:"Brasil",          2:"Marruecos"},
+  D:{1:"Estados Unidos",  2:"Australia"},
+  E:{1:"Alemania",        2:"Costa de Marfil"},
+  F:{1:"Países Bajos",    2:"Japón"},
+  G:{1:"Bélgica",         2:"Egipto"},
+  H:{1:"España",          2:"Cabo Verde"},
+  I:{1:"Francia",         2:"Noruega"},
+  J:{1:"Argentina",       2:"Austria"},
+  K:{1:"Colombia",        2:"Portugal"},
+  L:{1:"Inglaterra",      2:"Croacia"},
 };
+// Best 3rd-placed teams that advance (only these 8 groups feed a {third} slot)
 const THIRD_QUALIFIERS={
-  A:"Corea del Sur",B:"Bosnia",C:"Escocia",D:"Australia",
-  E:"Ecuador",F:"Suecia",G:"Irán",H:"Arabia Saudí",
-  I:"Noruega",J:"Austria",K:"RD Congo",L:"Panamá",
+  A:"Corea del Sur",
+  B:"Bosnia",
+  D:"Paraguay",
+  E:"Ecuador",
+  G:"Irán",
+  I:"Senegal",
+  K:"RD Congo",
+  L:"Ghana",
 };
 
 function resolveSlot(slot){
@@ -861,8 +868,10 @@ function buildR32Tab(){
   document.getElementById("r32-list").innerHTML=r32.map(m=>{
     const res=liveResults[m.id];
     const kick=fmtKick(m.id);
-    const hLabel=labelSlot(m.s[0]);
-    const aLabel=labelSlot(m.s[1]);
+    const hName=resolveSlot(m.s[0])||labelSlot(m.s[0]);
+    const aName=resolveSlot(m.s[1])||labelSlot(m.s[1]);
+    const hLabel=`${FLAG[hName]?FLAG[hName]+" ":""}${esc(hName)}`;
+    const aLabel=`${FLAG[aName]?FLAG[aName]+" ":""}${esc(aName)}`;
     const pending=!res||res.h==null;
     const scoreStr=pending?(hasStarted(m.id)?"TBC":"vs"):`${res.h}–${res.a}${res.pen?" ("+res.pen.toUpperCase()+"PKs)":""}`;
     return `<div class="r32-card ${pending?"r32-pending":""}">
