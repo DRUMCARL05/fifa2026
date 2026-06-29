@@ -1,0 +1,322 @@
+# World Cup Predictor 2026 — Project Instructions
+
+This file is the single source of truth for anyone (or any AI assistant) working on this codebase. Read it in full before making any changes.
+
+---
+
+## Project Identity
+
+**App name:** World Cup Predictor 2026
+**Live URL:** https://carlosbuilds.dev
+**Admin URL:** https://carlosbuilds.dev/admin.html
+**Repository:** https://github.com/DRUMCARL05/fifa2026
+**Owner / Admin:** Carlos (DRUMCARL05)
+**Purpose:** A family and friends World Cup knockout stage prediction game, hosted as a static site on GitHub Pages with Firebase as the backend.
+
+---
+
+## Architecture — Never Change These Fundamentals
+
+```
+GitHub Pages (static hosting)
+    ├── index.html        → player app
+    ├── admin.html        → admin results panel
+    └── functions/
+        ├── index.js      → Cloud Function (auto-fetch results)
+        └── package.json  → Node.js 22, firebase-functions v6+
+
+Firebase Firestore (database)
+    ├── /results/matches        → match results (written by admin + Cloud Function)
+    ├── /players/{slug}         → player predictions + champion pick
+    ├── /meta/matchIdMap        → API ID ↔ internal match ID cache
+    └── /fetchLog               → auto-fetch run history
+
+football-data.org API (live scores)
+    → polled every 5 minutes by Cloud Function
+    → competition code: WC, stages: LAST_32, LAST_16, QUARTER_FINALS, SEMI_FINALS, THIRD_PLACE, FINAL
+```
+
+**Key constraint:** This is a zero-backend static app. No Node server, no Express, no build step. Everything runs in the browser or in Firebase Cloud Functions. Never introduce a bundler, framework, or server-side render step.
+
+---
+
+## File Responsibilities
+
+### `index.html` — Player App
+- Self-contained single file: HTML + CSS + JS + Firebase SDK (loaded via CDN)
+- No external JS files, no imports from local files
+- Firebase SDK version: `11.9.0` (do not upgrade without testing)
+- All tournament data (GROUPS, FLAG, CODE, KO, KICKOFF) is inlined in the `<script>` block
+- `localStorage` is used **only** to store the player's name (`qp26_user`)
+- All other state (predictions, champion pick, results) lives in Firestore
+
+### `admin.html` — Admin Panel
+- Same self-contained pattern as `index.html`
+- PIN authentication via `sessionStorage` (logs out on tab close)
+- Admin PIN: stored as `const ADMIN_PIN` in the script block
+- Uses amber/green colour scheme to visually distinguish from the player app
+- Writes to Firestore with `autoFetched: false` to permanently lock manual results
+
+### `functions/index.js` — Cloud Function
+- Scheduled: every 5 minutes
+- Runtime: Node.js 22
+- Uses native `fetch` (no node-fetch dependency)
+- Respects `autoFetched: false` as a permanent manual override lock
+- Logs every run to `/fetchLog` collection
+- Rate limit safety: 7-second sleep between each of the 6 API stage calls
+
+---
+
+## Design System — Always Maintain These
+
+### Colour Tokens (player app)
+```css
+--bg:      #07161A   /* page background */
+--panel:   #0D2329   /* card background */
+--panel2:  #112C34   /* input/button background */
+--line:    #1A424E   /* borders */
+--teal:    #2DD4BF   /* primary accent, saved state */
+--teal2:   #0F766E   /* secondary teal */
+--gold:    #F59E0B   /* champion card, multiplier badges */
+--red:     #F43F5E   /* lock icons, error states */
+--text:    #E2F4F2   /* primary text */
+--muted:   #6B9EA0   /* secondary text, labels */
+```
+
+### Colour Tokens (admin app)
+```css
+--bg:      #0A0F0A
+--panel:   #111A11
+--panel2:  #162016
+--line:    #1F3A1F
+--amber:   #F59E0B   /* primary admin accent */
+--amber2:  #92400E
+--teal:    #2DD4BF   /* auto-fetched result border */
+--green:   #22C55E   /* saved indicator */
+--red:     #F43F5E
+--text:    #E8F5E8
+--muted:   #6B9E6B
+```
+
+### Typography
+- **Display font:** Bebas Neue (loaded from Google Fonts) — used for scores, headings, points numbers
+- **Body font:** Inter (loaded from Google Fonts) — used for all other text
+- Minimum body font size: 16px equivalent (prevents iOS zoom on input focus)
+- Score values: `font-family: var(--display)`, `font-size: 2rem`
+
+### Component Rules
+- **Stepper buttons:** always 52×52px, border-radius 50%, never smaller
+- **Match cards:** `border-radius: 14px`, `padding: 1rem`
+- **Teal border on match card** = prediction saved
+- **Teal border on admin card** = auto-fetched result
+- **Amber border on admin card** = manual override (locked)
+- **Penalty selector:** slides in with CSS transition, never shown unless scores are equal
+- **Toast notifications:** bottom-centre, rounded pill, 1800ms duration
+- **Nav bar:** fixed bottom, 4 tabs (player app) / subnav tabs (admin app)
+
+---
+
+## Scoring System — Never Change Without Explicit Instruction
+
+| Outcome | Base Points |
+|---------|------------|
+| Exact scoreline (draw) + correct penalty winner | 4 |
+| Exact scoreline (any result) | 3 |
+| Exact draw score + wrong pen winner, OR wrong draw score + correct pen winner | 2 |
+| Correct team advances, wrong scoreline | 1 |
+| Complete miss | 0 |
+| Correct tournament champion | +15 (flat bonus, no multiplier) |
+
+### Round Multipliers
+| Round | Multiplier |
+|-------|-----------|
+| Round of 16 | ×1 |
+| Quarter-Finals | ×2 |
+| Semi-Finals | ×3 |
+| 3rd Place | ×1 |
+| Final | ×4 |
+
+**Champion bonus is always flat +15. It does not use a multiplier. It locks at the first R16 kickoff: `2026-07-04T17:00:00Z`.**
+
+---
+
+## Tournament Data — Internal Match IDs
+
+Internal match IDs run from **73 to 104**:
+- 73–88: Round of 32 (shown read-only, no predictions)
+- 89–96: Round of 16
+- 97–100: Quarter-Finals
+- 101–102: Semi-Finals
+- 103: 3rd Place
+- 104: Final
+
+Match IDs must remain stable. Never renumber them. The Firestore results document uses these as keys.
+
+### Bracket Sources (KO slot resolution)
+- `{ pos, g }` = positional finisher from group stage
+- `{ third }` = best 3rd-place qualifier
+- `{ W: matchId }` = winner of a previous match
+- `{ L: matchId }` = loser of a previous match (3rd place only)
+
+---
+
+## Firestore Data Structures
+
+### `/results/matches` document
+```javascript
+{
+  73: { h: 2, a: 0, autoFetched: true },
+  74: { h: 1, a: 1, pen: "h", autoFetched: false },  // false = manual lock
+  // ... keyed by numeric match ID
+}
+```
+- `h`: home team goals
+- `a`: away team goals
+- `pen`: `"h"` (home wins penalties) or `"a"` (away wins penalties) — only present for draws
+- `autoFetched`: `true` = written by Cloud Function, can be overwritten. `false` = manual override, Cloud Function will never touch it.
+
+### `/players/{slug}` document
+```javascript
+{
+  name: "Carlos",
+  champion: "Argentina",
+  predictions: {
+    89: { h: 2, a: 1, pen: null },
+    90: { h: 0, a: 0, pen: "a" },
+    // ... keyed by numeric match ID
+  },
+  updatedAt: 1751234567890
+}
+```
+- Slug is derived from the player's name: lowercase, spaces replaced with `_`, special chars removed
+- Predictions use the same structure as results (h, a, pen)
+
+### `/fetchLog` collection
+```javascript
+{
+  ts: 1751234567890,     // Unix timestamp ms
+  written: 3,            // number of results written
+  matchIds: [73, 74, 75] // which match IDs were updated
+}
+```
+
+---
+
+## Player Identity & Name Handling
+
+- Players identify themselves by name only — no passwords, no email
+- Name is stored in `localStorage` under key `qp26_user`
+- Name is slugified for Firestore document ID: `slugify(name)` → lowercase, underscores, alphanumeric only
+- If two players use the same name they share a document — warn players about this
+- Name change (`changeName()`) clears localStorage and reloads; player must re-enter name
+
+---
+
+## Match Locking Rules
+
+- **Group stage / R32:** no predictions at all — shown read-only in the R32 tab
+- **KO matches:** predictions lock automatically when `Date.now() >= Date.parse(KICKOFF[id])`
+- **Champion pick:** locks at `2026-07-04T17:00:00Z` (first R16 kickoff)
+- Locked matches show a 🔒 icon and disabled stepper buttons
+- Locked matches still show the result badge if a result has been published
+
+---
+
+## Cloud Function Rules
+
+1. **Never remove the 7-second sleep** between API stage calls — required for rate limit compliance
+2. **Never overwrite `autoFetched: false` results** — this is the manual override mechanism
+3. **Always write to `/fetchLog`** after every run with results, even if `written: 0`
+4. **Always use `merge: true` on metaRef.set** — the matchIdMap is additive
+5. The function uses `fetch` natively (Node 22) — do not add node-fetch as a dependency
+6. Timeout is set to 120 seconds — the 6 stage calls × 7s sleep = ~42s minimum, well within limit
+
+---
+
+## What to Do When Making Changes
+
+### Adding a new feature to the player app
+1. Keep all JS inside the single `<script type="module">` block
+2. Use existing CSS variables — do not introduce new colour values without updating this file
+3. Test that predictions still save correctly to Firestore after any JS changes
+4. Test on mobile viewport (375px width minimum)
+5. Do not add npm dependencies — the player app has zero build step
+
+### Updating the admin panel
+1. Admin uses `sessionStorage` for auth — do not switch to `localStorage`
+2. Always set `autoFetched: false` when publishing a manual result
+3. Keep the status bar and fetch log functional — they are the admin's primary monitoring tools
+4. The `refreshCard(id)` function rebuilds a single card in-place — use it after any Firestore write
+
+### Updating the Cloud Function
+1. After any change to `functions/index.js`, redeploy with `firebase deploy --only functions`
+2. Verify the function appears in Firebase Console → Functions after deploying
+3. Check Firebase Console → Functions → Logs within 10 minutes to confirm it ran successfully
+4. Do not change the schedule from "every 5 minutes" without updating rate limit sleep values
+
+### Changing the scoring system
+1. Update `scoreMatch()` in **both** `index.html` and `admin.html` — they must be identical
+2. Update the scoring table in this file
+3. Update the Rules tab in `index.html`
+4. Scores are computed client-side at read time — no historical recalculation needed
+
+---
+
+## Key Dates & Lock Times
+
+| Event | Date/Time (UTC) |
+|-------|----------------|
+| Round of 32 begins | 2026-06-28T19:00:00Z |
+| Round of 16 begins / Champion pick locks | 2026-07-04T17:00:00Z |
+| Quarter-Finals begin | 2026-07-09T20:00:00Z |
+| Semi-Finals begin | 2026-07-14T19:00:00Z |
+| 3rd Place match | 2026-07-18T19:00:00Z |
+| Final | 2026-07-19T19:00:00Z |
+| Firestore rules expire | 2026-08-01 |
+
+---
+
+## Known Constraints & Decisions
+
+**Why no shared leaderboard via JSON export?**
+Firebase Firestore gives every player a real-time live leaderboard. The export/import approach was considered and rejected in favour of this.
+
+**Why `autoFetched` flag instead of a separate collection?**
+Keeping results in a single flat document makes Firestore reads cheap (one read per listener update) and keeps the scoring engine simple.
+
+**Why is the R32 read-only?**
+The app launched mid-tournament when R32 matches had already started. This was a deliberate design decision to let all players start on equal footing from R16 onwards.
+
+**Why Bebas Neue + Inter?**
+Bebas Neue gives the score numbers a strong, stadium scoreboard feel. Inter is the most legible system-style font for small text on mobile. Both are available on Google Fonts with no licensing cost.
+
+**Why no TypeScript / React / bundler?**
+The app must deploy as raw files to GitHub Pages with zero build step. Keeping it vanilla ensures it works forever without dependency rot.
+
+---
+
+## Credentials Reference (keep private, do not commit to public repo)
+
+| Item | Location |
+|------|---------|
+| Firebase config | Inlined in `index.html` and `admin.html` |
+| Admin PIN | `const ADMIN_PIN` in `admin.html` |
+| football-data.org token | `const FD_TOKEN` in `functions/index.js` |
+| Firebase project ID | `worldcup-predictor-2026-dc494` |
+| Domain registrar | Porkbun (carlosbuilds.dev) |
+| GitHub account | DRUMCARL05 |
+
+---
+
+## Quick Reference — Admin Checklist Per Match Day
+
+- [ ] Open `carlosbuilds.dev/admin.html` and enter PIN
+- [ ] Check status bar — green dot confirms auto-fetch is running
+- [ ] After a match finishes, wait up to 5 minutes for auto-fetch to populate the result (teal border)
+- [ ] Verify the score is correct — if wrong, adjust with steppers and tap **Override & Publish**
+- [ ] Check **Fetch Log** tab to confirm the run was logged
+- [ ] Check **Players** tab to confirm leaderboard updated correctly
+
+---
+
+*Last updated: June 2026. Update this file whenever a significant architectural or design decision is made.*
