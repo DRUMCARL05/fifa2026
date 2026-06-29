@@ -451,7 +451,7 @@ window.addEventListener("offline", ()=>{ document.getElementById("offline-banner
   document.getElementById("name-input").addEventListener("keydown",e=>{ if(e.key==="Enter") startApp(); });
 })();
 
-async function startApp(){
+window.startApp=async function startApp(){
   const v=document.getElementById("name-input").value.trim();
   if(!v){ document.getElementById("gate-error").textContent="Please enter your name."; return; }
   userName=v;
@@ -498,7 +498,7 @@ async function boot(){
   updateProgress();
 }
 
-function changeName(){
+window.changeName=function changeName(){
   if(unsubResults) unsubResults();
   if(unsubPlayers) unsubPlayers();
   localStorage.removeItem(LS_USER);
