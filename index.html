@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>World Cup Predictor</title>
+    <style>
+        :root {
+            --bg: #ffffff; --ink: #111111; --surface: #f5f5f7; --accent: #0066cc; --border: #e5e5ea;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #000000; --ink: #ffffff; --surface: #1c1c1e; --accent: #0a84ff; --border: #2c2c2e; }
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--ink); display: flex; flex-direction: column; min-height: 100vh; }
+        header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem; text-align: center; position: sticky; top: 0; z-index: 10; }
+        main { flex: 1; padding: 1rem 1rem 80px; max-width: 600px; width: 100%; margin: 0 auto; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 10; }
+        .nav-btn { background: none; border: none; color: var(--ink); font-size: 0.9rem; font-weight: 600; cursor: pointer; opacity: 0.5; padding: 0.5rem 1rem; transition: opacity 0.2s; }
+        .nav-btn.active { opacity: 1; color: var(--accent); }
+        #onboarding-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; text-align: center; gap: 1.5rem; }
+        .hidden { display: none !important; }
+        input, button, select { width: 100%; max-width: 300px; padding: 0.8rem; font-size: 1rem; border-radius: 10px; }
+        input { border: 1px solid var(--border); background: var(--surface); color: var(--ink); }
+        button { background: var(--accent); color: #fff; border: none; font-weight: bold; cursor: pointer; }
+        .subnav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem; }
+        .subnav-btn { flex: 1; padding: 0.6rem 1rem; background: var(--surface); border: 1px solid var(--border); color: var(--ink); border-radius: 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .subnav-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .match-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.2rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .team-row { display: flex; align-items: center; justify-content: space-between; margin: 0.75rem 0; }
+        .team-info { display: flex; align-items: center; gap: 0.75rem; font-size: 1.15rem; font-weight: 700; }
+        .flag { font-size: 1.6rem; width: 32px; text-align: center; }
+        .stepper { display: flex; align-items: center; gap: 1rem; }
+        .step-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--bg); color: var(--ink); font-size: 1.4rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .score-val { font-size: 1.5rem; font-weight: 800; min-width: 24px; text-align: center; }
+        .penalty-box { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.3s ease; border-top: 1px dashed var(--border); }
+        .penalty-box.show { max-height: 140px; opacity: 1; margin-top: 1rem; padding-top: 1rem; }
+        .pk-title { font-size: 0.95rem; font-weight: 600; text-align: center; margin-bottom: 0.75rem; }
+        .pk-selectors { display: flex; gap: 0.75rem; }
+        .pk-btn { flex: 1; padding: 0.8rem; border: 2px solid var(--border); background: var(--bg); color: var(--ink); border-radius: 12px; cursor: pointer; font-weight: 700; }
+        .pk-btn.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { padding: 0.75rem 0.5rem; text-align: left; }
+        tr { border-bottom: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+    <div id="onboarding-screen" class="hidden">
+        <h1>Welcome to Quiniela</h1>
+        <p>Enter your name to start predicting.</p>
+        <input type="text" id="username-input" placeholder="Your Name">
+        <button onclick="initOnboarding()">Get Started</button>
+    </div>
+
+    <header><h2>World Cup Predictor</h2></header>
+
+    <main>
+        <section id="predict" class="tab-content active">
+            <div class="match-card" id="champion-card" style="border: 2px solid var(--accent);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h4>🏆 Ultimate Champion Selection</h4>
+                    <span style="background: var(--accent); color: #fff; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">+15 PTS</span>
+                </div>
+                <select id="champion-select" onchange="saveChampionPrediction(this.value)" style="width: 100%;">
+                    <option value="">-- Choose Tournament Winner --</option>
+                    <option value="Wales">Wales 🏴󠁧󠁢󠁷󠁬󠁳󠁿</option>
+                    <option value="England">England 🏴󠁧󠁢󠁥󠁮󠁧󠁿</option>
+                </select>
+            </div>
+
+            <div class="subnav">
+                <button class="subnav-btn active">Round of 16</button>
+                <button class="subnav-btn">Quarter-Finals</button>
+                <button class="subnav-btn">Semi-Finals</button>
+                <button class="subnav-btn">Final</button>
+            </div>
+
+            <div class="match-card" id="m1">
+                <div class="team-row">
+                    <div class="team-info"><span class="flag">🏴󠁧󠁢󠁷󠁬󠁳󠁿</span><span>Wales</span></div>
+                    <div class="stepper">
+                        <button class="step-btn" onclick="stepScore('m1', 'home', -1)">-</button>
+                        <span class="score-val" id="m1-home">0</span>
+                        <button class="step-btn" onclick="stepScore('m1', 'home', 1)">+</button>
+                    </div>
+                </div>
+                <div class="team-row">
+                    <div class="team-info"><span class="flag">🏴󠁧󠁢󠁥󠁮󠁧󠁿</span><span>England</span></div>
+                    <div class="stepper">
+                        <button class="step-btn" onclick="stepScore('m1', 'away', -1)">-</button>
+                        <span class="score-val" id="m1-away">0</span>
+                        <button class="step-btn" onclick="stepScore('m1', 'away', 1)">+</button>
+                    </div>
+                </div>
+                <div class="penalty-box" id="m1-pk">
+                    <p class="pk-title">🏆 Who wins the penalty shootout?</p>
+                    <div class="pk-selectors">
+                        <button class="pk-btn" onclick="setPkWinner('m1', 'home', this)">Wales</button>
+                        <button class="pk-btn" onclick="setPkWinner('m1', 'away', this)">England</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="standings" class="tab-content">
+            <h3>Leaderboard</h3>
+            <table>
+                <thead>
+                    <tr style="opacity: 0.7;"><th>Rank</th><th>Player</th><th style="text-align:center;">Exact Scores</th><th style="text-align:right;">Points</th></tr>
+                </thead>
+                <tbody id="leaderboard-data">
+                    <tr><td>🥇 1</td><td>Sian (You)</td><td style="text-align:center;">3</td><td style="text-align:right; font-weight:bold; color:var(--accent);">24</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="rules" class="tab-content">
+            <h3>Tournament Rules</h3>
+            <button onclick="toggleRulesModal(true)" style="margin-top:1rem;">View Rules Details</button>
+        </section>
+    </main>
+
+    <nav class="nav-bar">
+        <button class="nav-btn active" onclick="switchTab('predict', this)">Predict</button>
+        <button class="nav-btn" onclick="switchTab('standings', this)">Standings</button>
+        <button class="nav-btn" onclick="switchTab('rules', this)">Rules</button>
+    </nav>
+
+    <script>
+        const R16_LOCK_TIME = new Date("2026-06-30T17:00:00Z");
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!localStorage.getItem("quiniela_user")) {
+                document.getElementById("onboarding-screen").classList.remove("hidden");
+            }
+            checkLockStatus();
+            const savedChamp = localStorage.getItem("quiniela_champion");
+            if(savedChamp) document.getElementById("champion-select").value = savedChamp;
+            loadPredictions();
+        });
+
+        function initOnboarding() {
+            const name = document.getElementById("username-input").value.trim();
+            if (name) {
+                localStorage.setItem("quiniela_user", name);
+                document.getElementById("onboarding-screen").classList.add("hidden");
+            }
+        }
+
+        function switchTab(tabId, element) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function stepScore(id, side, val) {
+            if (new Date() >= R16_LOCK_TIME) return;
+            const lbl = document.getElementById(`${id}-${side}`);
+            let current = parseInt(lbl.innerText) + val;
+            if (current < 0) current = 0;
+            lbl.innerText = current;
+
+            const h = parseInt(document.getElementById(`${id}-home`).innerText);
+            const a = parseInt(document.getElementById(`${id}-away`).innerText);
+            const pk = document.getElementById(`${id}-pk`);
+            
+            if (h === a) { pk.classList.add('show'); } 
+            else {
+                pk.classList.remove('show');
+                document.querySelectorAll(`#${id} .pk-btn`).forEach(b => b.classList.remove('selected'));
+            }
+            autoSave();
+        }
+
+        function setPkWinner(id, side, btn) {
+            if (new Date() >= R16_LOCK_TIME) return;
+            document.querySelectorAll(`#${id} .pk-btn`).forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            autoSave();
+        }
+
+        function saveChampionPrediction(val) {
+            if (new Date() < R16_LOCK_TIME && val) {
+                localStorage.setItem("quiniela_champion", val);
+            }
+        }
+
+        function checkLockStatus() {
+            if (new Date() >= R16_LOCK_TIME) {
+                const selectEl = document.getElementById("champion-select");
+                if(selectEl) selectEl.disabled = true;
+                document.querySelectorAll(".step-btn, .pk-btn").forEach(btn => btn.disabled = true);
+            }
+        }
+
+        function autoSave() {
+            const preds = JSON.parse(localStorage.getItem('quiniela_predictions')) || {};
+            const h = parseInt(document.getElementById('m1-home').innerText);
+            const a = parseInt(document.getElementById('m1-away').innerText);
+            const activePk = document.querySelector('#m1 .pk-btn.selected');
+            preds['m1'] = { home: h, away: a, pk: activePk ? (activePk.innerText.toLowerCase().includes('wales') ? 'home' : 'away') : null };
+            localStorage.setItem('quiniela_predictions', JSON.stringify(preds));
+        }
+
+        function loadPredictions() {
+            const preds = JSON.parse(localStorage.getItem('quiniela_predictions')) || {};
+            if(preds['m1']) {
+                document.getElementById('m1-home').innerText = preds['m1'].home;
+                document.getElementById('m1-away').innerText = preds['m1'].away;
+                if(preds['m1'].home === preds['m1'].away) {
+                    document.getElementById('m1-pk').classList.add('show');
+                    const idx = preds['m1'].pk === 'home' ? 0 : 1;
+                    if(document.querySelectorAll('#m1 .pk-btn')[idx]) {
+                        document.querySelectorAll('#m1 .pk-btn')[idx].classList.add('selected');
+                    }
+                }
+            }
+        }
+
+        function toggleRulesModal(show) {
+            let modal = document.getElementById("rules-modal-box");
+            if (!modal) {
+                modal = document.createElement("div");
+                modal.id = "rules-modal-box";
+                modal.style = "position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:200; padding:1rem;";
+                modal.innerHTML = `
+                    <div style="background:var(--surface); padding:1.5rem; border-radius:16px; max-width:400px; width:100%; border:1px solid var(--border);">
+                        <h3 style="margin-bottom:1rem;">📋 Scoring Rules</h3>
+                        <ul style="margin-bottom:1.5rem; padding-left:1.2rem; display:flex; flex-direction:column; gap:0.5rem; font-size:0.9rem;">
+                            <li><strong>4 Pts:</strong> Exact score + PK winner</li>
+                            <li><strong>2 Pts:</strong> Exact score only OR correct draw choice</li>
+                            <li><strong>1 Pt:</strong> Correct qualifying team choice</li>
+                        </ul>
+                        <button onclick="toggleRulesModal(false)" style="background:var(--accent);">Got it</button>
+                    </div>`;
+                document.body.appendChild(modal);
+            }
+            modal.style.display = show ? "flex" : "none";
+        }
+    </script>
+</body>
+</html>
