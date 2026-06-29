@@ -451,7 +451,7 @@ window.addEventListener("offline", ()=>{ document.getElementById("offline-banner
   document.getElementById("name-input").addEventListener("keydown",e=>{ if(e.key==="Enter") startApp(); });
 })();
 
-window.startApp=async function startApp(){
+async function startApp(){
   const v=document.getElementById("name-input").value.trim();
   if(!v){ document.getElementById("gate-error").textContent="Please enter your name."; return; }
   userName=v;
@@ -498,7 +498,7 @@ async function boot(){
   updateProgress();
 }
 
-window.changeName=function changeName(){
+function changeName(){
   if(unsubResults) unsubResults();
   if(unsubPlayers) unsubPlayers();
   localStorage.removeItem(LS_USER);
@@ -562,7 +562,30 @@ function resolveTeams(mid){
   const m=KO_BY_ID[mid]; if(!m) return {hT:null,aT:null};
   return {hT:resolveSlot(m.s[0]),aT:resolveSlot(m.s[1])};
 }
+// Hardcoded group stage qualifiers (1st/2nd/3rd per group) from actual 2026 results
+const GROUP_QUALIFIERS={
+  A:{1:"México",         2:"Sudáfrica",      3:"Corea del Sur"},
+  B:{1:"Canadá",         2:"Suiza",          3:"Bosnia"},
+  C:{1:"Marruecos",      2:"Brasil",         3:"Escocia"},
+  D:{1:"Estados Unidos", 2:"Turquía",        3:"Australia"},
+  E:{1:"Alemania",       2:"Costa de Marfil",3:"Ecuador"},
+  F:{1:"Países Bajos",   2:"Japón",          3:"Suecia"},
+  G:{1:"Bélgica",        2:"Egipto",         3:"Irán"},
+  H:{1:"España",         2:"Uruguay",        3:"Arabia Saudí"},
+  I:{1:"Francia",        2:"Senegal",        3:"Noruega"},
+  J:{1:"Argentina",      2:"Argelia",        3:"Austria"},
+  K:{1:"Portugal",       2:"Colombia",       3:"RD Congo"},
+  L:{1:"Inglaterra",     2:"Croacia",        3:"Panamá"},
+};
+const THIRD_QUALIFIERS={
+  A:"Corea del Sur",B:"Bosnia",C:"Escocia",D:"Australia",
+  E:"Ecuador",F:"Suecia",G:"Irán",H:"Arabia Saudí",
+  I:"Noruega",J:"Austria",K:"RD Congo",L:"Panamá",
+};
+
 function resolveSlot(slot){
+  if(slot.pos) return (GROUP_QUALIFIERS[slot.g]&&GROUP_QUALIFIERS[slot.g][slot.pos])||null;
+  if(slot.third) return THIRD_QUALIFIERS[slot.third]||null;
   if(slot.W){
     const res=liveResults[slot.W];
     const {hT,aT}=resolveTeams(slot.W);
