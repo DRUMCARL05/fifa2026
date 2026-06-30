@@ -147,26 +147,100 @@ function normTeam(name) {
     .toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-// Our KO bracket — used to resolve expected team names per slot
-// (simplified: we only need home/away for R32; later rounds resolved dynamically)
-const KO_SLOTS = {
-  73:  ["2nd Group A",  "2nd Group B"],
-  74:  ["1st Group E",  "Best 3rd E"],
-  75:  ["1st Group F",  "2nd Group C"],
-  76:  ["1st Group C",  "2nd Group F"],
-  77:  ["1st Group I",  "Best 3rd I"],
-  78:  ["2nd Group E",  "2nd Group I"],
-  79:  ["1st Group A",  "Best 3rd A"],
-  80:  ["1st Group L",  "Best 3rd L"],
-  81:  ["1st Group D",  "Best 3rd D"],
-  82:  ["1st Group G",  "Best 3rd G"],
-  83:  ["2nd Group K",  "2nd Group L"],
-  84:  ["1st Group H",  "2nd Group J"],
-  85:  ["1st Group B",  "Best 3rd B"],
-  86:  ["1st Group J",  "2nd Group H"],
-  87:  ["1st Group K",  "Best 3rd K"],
-  88:  ["2nd Group D",  "2nd Group G"],
+// Full knockout bracket structure (mirrors index.html / admin.html exactly).
+// Used to dynamically resolve R16+ team names from already-known results,
+// so those rounds can also be matched to the API by team name instead of
+// date alone (R16+ dates can collide too, e.g. July 6 has both #92 and #93).
+const KO_BRACKET = {
+  73:{s:[{pos:2,g:"A"},{pos:2,g:"B"}]},
+  74:{s:[{pos:1,g:"E"},{third:"E"}]},
+  75:{s:[{pos:1,g:"F"},{pos:2,g:"C"}]},
+  76:{s:[{pos:1,g:"C"},{pos:2,g:"F"}]},
+  77:{s:[{pos:1,g:"I"},{third:"I"}]},
+  78:{s:[{pos:2,g:"E"},{pos:2,g:"I"}]},
+  79:{s:[{pos:1,g:"A"},{third:"A"}]},
+  80:{s:[{pos:1,g:"L"},{third:"L"}]},
+  81:{s:[{pos:1,g:"D"},{third:"D"}]},
+  82:{s:[{pos:1,g:"G"},{third:"G"}]},
+  83:{s:[{pos:2,g:"K"},{pos:2,g:"L"}]},
+  84:{s:[{pos:1,g:"H"},{pos:2,g:"J"}]},
+  85:{s:[{pos:1,g:"B"},{third:"B"}]},
+  86:{s:[{pos:1,g:"J"},{pos:2,g:"H"}]},
+  87:{s:[{pos:1,g:"K"},{third:"K"}]},
+  88:{s:[{pos:2,g:"D"},{pos:2,g:"G"}]},
+  89:{s:[{W:74},{W:77}]},
+  90:{s:[{W:73},{W:75}]},
+  91:{s:[{W:76},{W:78}]},
+  92:{s:[{W:79},{W:80}]},
+  93:{s:[{W:83},{W:84}]},
+  94:{s:[{W:81},{W:82}]},
+  95:{s:[{W:86},{W:88}]},
+  96:{s:[{W:85},{W:87}]},
+  97:{s:[{W:89},{W:90}]},
+  98:{s:[{W:93},{W:94}]},
+  99:{s:[{W:91},{W:92}]},
+  100:{s:[{W:95},{W:96}]},
+  101:{s:[{W:97},{W:98}]},
+  102:{s:[{W:99},{W:100}]},
+  103:{s:[{L:101},{L:102}]},
+  104:{s:[{W:101},{W:102}]},
 };
+// Group qualifiers (winner/runner-up) and 3rd-place bracket-slot teams,
+// used by resolveSlot() to turn pos/third slots into real English team names.
+// IMPORTANT: keep this in sync with index.html's GROUP_QUALIFIERS / THIRD_QUALIFIERS
+// (English here since we're matching against the football-data.org API).
+const GROUP_QUALIFIERS_EN = {
+  A:{1:"Mexico",        2:"South Africa"},
+  B:{1:"Switzerland",   2:"Canada"},
+  C:{1:"Brazil",        2:"Morocco"},
+  D:{1:"USA",           2:"Australia"},
+  E:{1:"Germany",       2:"Ivory Coast"},
+  F:{1:"Netherlands",   2:"Japan"},
+  G:{1:"Belgium",       2:"Egypt"},
+  H:{1:"Spain",         2:"Cabo Verde"},
+  I:{1:"France",        2:"Norway"},
+  J:{1:"Argentina",     2:"Austria"},
+  K:{1:"Colombia",      2:"Portugal"},
+  L:{1:"England",       2:"Croatia"},
+};
+const THIRD_QUALIFIERS_EN = {
+  E:"Paraguay", I:"Sweden", A:"Ecuador", L:"DR Congo",
+  D:"Bosnia and Herzegovina", G:"Senegal", B:"Algeria", K:"Ghana",
+};
+// Resolves a bracket slot to a real team name (English), given currently-known
+// results. Returns null if not yet resolvable (match not finished, or feeder
+// match's own teams aren't resolvable yet).
+function resolveSlot(slot, results) {
+  if (slot.pos) return (GROUP_QUALIFIERS_EN[slot.g] && GROUP_QUALIFIERS_EN[slot.g][slot.pos]) || null;
+  if (slot.third) return THIRD_QUALIFIERS_EN[slot.third] || null;
+  if (slot.W) {
+    const res = results[slot.W];
+    const feeder = KO_BRACKET[slot.W];
+    if (!res || res.h == null || !feeder) return null;
+    const hT = resolveSlot(feeder.s[0], results);
+    const aT = resolveSlot(feeder.s[1], results);
+    if (!hT || !aT) return null;
+    if (res.h > res.a) return hT;
+    if (res.a > res.h) return aT;
+    if (res.pen === "h") return hT;
+    if (res.pen === "a") return aT;
+    return null;
+  }
+  if (slot.L) {
+    const res = results[slot.L];
+    const feeder = KO_BRACKET[slot.L];
+    if (!res || res.h == null || !feeder) return null;
+    const hT = resolveSlot(feeder.s[0], results);
+    const aT = resolveSlot(feeder.s[1], results);
+    if (!hT || !aT) return null;
+    if (res.h > res.a) return aT;
+    if (res.a > res.h) return hT;
+    if (res.pen === "h") return aT;
+    if (res.pen === "a") return hT;
+    return null;
+  }
+  return null;
+}
 
 // ─── MAIN SCHEDULED FUNCTION ──────────────────────────────────────────────────
 exports.fetchResults = onSchedule(
@@ -237,14 +311,36 @@ exports.fetchResults = onSchedule(
               console.log(`Match ${ourId}: no team-name match found in API for ${R32_TEAMS[numOurId].join(" vs ")} on ${date}`);
             }
           } else {
-            // R16+ : teams aren't known ahead of time, fall back to date matching.
-            // Collisions are less likely here since rounds spread matches across days,
-            // but this remains a known weaker match — verify manually if uncertain.
-            apiMatch = allApiMatches.find(m => {
-              const apiDate = m.utcDate ? m.utcDate.substring(0, 10) : "";
-              return apiDate === date;
-            });
-            if (apiMatch) matchIdMap[ourId] = apiMatch.id;
+            // R16+ : resolve expected team names dynamically from already-known
+            // results (their own feeder matches), then match by team name just
+            // like R32. Falls back to date-only matching only if the bracket
+            // isn't resolvable yet (feeder match unfinished) — in that case we
+            // skip for now and retry on a later run once the feeder is known.
+            const bracketEntry = KO_BRACKET[numOurId];
+            const wantHomeName = bracketEntry ? resolveSlot(bracketEntry.s[0], currentResults) : null;
+            const wantAwayName = bracketEntry ? resolveSlot(bracketEntry.s[1], currentResults) : null;
+
+            if (wantHomeName && wantAwayName) {
+              const wantHome = normTeam(wantHomeName);
+              const wantAway = normTeam(wantAwayName);
+              apiMatch = allApiMatches.find(m => {
+                const apiHome = normTeam(m.homeTeam && m.homeTeam.name);
+                const apiAway = normTeam(m.awayTeam && m.awayTeam.name);
+                return (apiHome === wantHome && apiAway === wantAway) ||
+                       (apiHome === wantAway && apiAway === wantHome);
+              });
+              if (apiMatch) {
+                const apiHome = normTeam(apiMatch.homeTeam && apiMatch.homeTeam.name);
+                matchIdMap[ourId] = apiMatch.id;
+                matchIdMap[ourId + "_flip"] = (apiHome !== wantHome);
+              } else {
+                console.log(`Match ${ourId}: no team-name match found for ${wantHomeName} vs ${wantAwayName} on ${date}`);
+              }
+            } else {
+              // Feeder match(es) not finished yet — teams unknown, can't safely
+              // match by name. Skip for now; will retry automatically on next run.
+              console.log(`Match ${ourId}: teams not yet resolvable (feeder match pending), skipping for now`);
+            }
           }
         }
         // Persist the map so we don't recompute it
