@@ -647,7 +647,7 @@ function applyTranslationsStatic(){
   document.documentElement.lang = lang;
 }
 
-async function startApp(){
+window.startApp=async function startApp(){
   const v=document.getElementById("name-input").value.trim();
   if(!v){ document.getElementById("gate-error").textContent=t("gate_error_name"); return; }
   userName=v;
@@ -695,7 +695,7 @@ async function boot(){
   applyTranslations();
 }
 
-function changeName(){
+window.changeName=function changeName(){
   if(unsubResults) unsubResults();
   if(unsubPlayers) unsubPlayers();
   localStorage.removeItem(LS_USER);
