@@ -354,6 +354,81 @@ The app must deploy as raw files to GitHub Pages with zero build step. Keeping i
 
 ---
 
+## Security & Firestore Rules
+
+This app has **no Firebase Authentication** — players identify by name only, and
+the admin panel uses a client-side PIN check (`ADMIN_PIN` in `admin.html`).
+This is a **deliberate, accepted tradeoff** for a closed friend-group tool, not
+an oversight: the PIN keeps casual users out of the admin UI, but it is not a
+real security boundary — anyone who opens browser DevTools can read the PIN
+or write directly to Firestore using the app's public Firebase config (which
+is necessarily public, since it ships in the client-side source). There is no
+way to cryptographically distinguish "the admin" from "any other visitor" at
+the database layer without adding real Firebase Auth, which was judged
+disproportionate to the actual risk (a friends-and-family prediction pool, not
+a system handling money or sensitive data).
+
+**Current Firestore rules** (replacing the original fully-open test-mode
+rules) scope reads as public — needed for the live leaderboard and results to
+work without login — while constraining writes to match the expected shape of
+each collection, removing the ability for a client to write arbitrary data to
+an unrelated/unexpected path:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /results/matches {
+      allow read: if true;
+      allow write: if request.time < timestamp.date(2026, 8, 1);
+    }
+
+    match /players/{slug} {
+      allow read: if true;
+      allow write: if request.time < timestamp.date(2026, 8, 1)
+                   && request.resource.data.keys().hasAll(['name','predictions','updatedAt'])
+                   && request.resource.data.name is string
+                   && request.resource.data.name.size() < 50;
+    }
+
+    match /meta/{doc} {
+      allow read: if true;
+      allow write: if request.time < timestamp.date(2026, 8, 1);
+    }
+
+    match /fetchLog/{doc} {
+      allow read: if true;
+      allow write: if request.time < timestamp.date(2026, 8, 1);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+```
+
+**What this does and doesn't protect against:** it prevents a client from
+writing malformed data (missing fields, wrong types) into `players/{slug}`,
+and removes the previous default-allow-everything posture for any
+unrecognized document path. It does **not** prevent a determined user from
+writing a syntactically valid but dishonest player document (e.g. inflating
+their own predictions after a match has locked) or from publishing a fake
+result to `results/matches` — those protections would require Firebase Auth
+plus an admin-role check, which is an explicit non-goal for this app's scale.
+If the trust model of the group ever changes (e.g. opened to strangers, real
+stakes introduced), this should be revisited.
+
+**Predictions are visible to all players before lock.** The leaderboard's
+real-time listener (`onSnapshot(collection(db,"players"))`) fetches every
+player's full `predictions` object so it can compute everyone's score
+client-side. This means a player could technically read another player's
+picks before that player's matches lock, by inspecting network traffic. Low
+stakes for a friend group; worth knowing if this ever needs hardening.
+
+---
+
 ## Credentials Reference (keep private, do not commit to public repo)
 
 | Item | Location |
@@ -378,4 +453,4 @@ The app must deploy as raw files to GitHub Pages with zero build step. Keeping i
 
 ---
 
-*Last updated: June 2026 (bilingual support, Cloud Function team-name matching fix, admin live-refresh fix). Update this file whenever a significant architectural or design decision is made.*
+*Last updated: June 2026 (bilingual support, Cloud Function team-name matching fix, admin live-refresh fix, Firestore rules tightened from open test-mode to scoped per-collection rules). Update this file whenever a significant architectural or design decision is made.*

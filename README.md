@@ -138,15 +138,39 @@ All data lives in Firestore. `localStorage` is used only to remember the player'
 ### 1. Firebase Setup
 
 1. Go to [console.firebase.google.com](https://console.firebase.google.com) and create a project
-2. Enable **Firestore Database** in test mode
-3. Set Firestore rules to allow reads/writes through the tournament end:
+2. Enable **Firestore Database**
+3. Set Firestore rules scoped per collection (public reads for the leaderboard/results, writes constrained to a valid document shape — no Firebase Auth is used, so writes can't be tied to a specific identity, but this avoids a fully open database):
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    match /results/matches {
+      allow read: if true;
+      allow write: if request.time < timestamp.date(2026, 8, 1);
+    }
+
+    match /players/{slug} {
+      allow read: if true;
+      allow write: if request.time < timestamp.date(2026, 8, 1)
+                   && request.resource.data.keys().hasAll(['name','predictions','updatedAt'])
+                   && request.resource.data.name is string
+                   && request.resource.data.name.size() < 50;
+    }
+
+    match /meta/{doc} {
+      allow read: if true;
+      allow write: if request.time < timestamp.date(2026, 8, 1);
+    }
+
+    match /fetchLog/{doc} {
+      allow read: if true;
+      allow write: if request.time < timestamp.date(2026, 8, 1);
+    }
+
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 8, 1);
+      allow read, write: if false;
     }
   }
 }
