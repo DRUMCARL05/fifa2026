@@ -130,13 +130,13 @@ const R32_TEAMS = {
   77: ["France", "Sweden"],
   78: ["Ivory Coast", "Norway"],
   79: ["Mexico", "Ecuador"],
-  80: ["England", "DR Congo"],
-  81: ["USA", "Bosnia and Herzegovina"],
+  80: ["England", "Congo DR"],           // API uses "Congo DR" not "DR Congo"
+  81: ["United States", "Bosnia-Herzegovina"], // API uses "United States" and "Bosnia-Herzegovina" (en-dash)
   82: ["Belgium", "Senegal"],
   83: ["Portugal", "Croatia"],
   84: ["Spain", "Austria"],
   85: ["Switzerland", "Algeria"],
-  86: ["Argentina", "Cabo Verde"],
+  86: ["Argentina", "Cape Verde Islands"], // API uses "Cape Verde Islands" not "Cabo Verde"
   87: ["Colombia", "Ghana"],
   88: ["Australia", "Egypt"],
 };
@@ -145,6 +145,17 @@ function normTeam(name) {
   return String(name || "")
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // strip accents
     .toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+// Build a reverse lookup: normalised API name → normalised R32_TEAMS name,
+// so we can catch variants like "Côte d'Ivoire" matching "Ivory Coast"
+// by checking both the raw name AND the TEAM_MAP-translated version.
+function teamsMatch(apiName, wantName) {
+  const normApi = normTeam(apiName);
+  const normWant = normTeam(wantName);
+  if (normApi === normWant) return true;
+  // Also try matching via TEAM_MAP translation
+  const mapped = normTeam(TEAM_MAP[apiName] || "");
+  return mapped && mapped === normWant;
 }
 
 // Full knockout bracket structure (mirrors index.html / admin.html exactly).
@@ -293,20 +304,19 @@ exports.fetchResults = onSchedule(
 
           if (R32_TEAMS[numOurId]) {
             // R32: match by team names, not just date, to avoid same-day collisions
-            const [wantHome, wantAway] = R32_TEAMS[numOurId].map(normTeam);
+            const [wantHome, wantAway] = R32_TEAMS[numOurId];
             apiMatch = allApiMatches.find(m => {
-              const apiHome = normTeam(m.homeTeam && m.homeTeam.name);
-              const apiAway = normTeam(m.awayTeam && m.awayTeam.name);
+              const apiHome = m.homeTeam && m.homeTeam.name;
+              const apiAway = m.awayTeam && m.awayTeam.name;
               // Accept either orientation; we record whether it's flipped below
-              return (apiHome === wantHome && apiAway === wantAway) ||
-                     (apiHome === wantAway && apiAway === wantHome);
+              return (teamsMatch(apiHome, wantHome) && teamsMatch(apiAway, wantAway)) ||
+                     (teamsMatch(apiHome, wantAway) && teamsMatch(apiAway, wantHome));
             });
             if (apiMatch) {
               const apiHome = normTeam(apiMatch.homeTeam && apiMatch.homeTeam.name);
-              // Record whether the API's home/away is flipped relative to ours,
-              // so score extraction can correct for it later.
+              // Record whether the API's home/away is flipped relative to ours
               matchIdMap[ourId] = apiMatch.id;
-              matchIdMap[ourId + "_flip"] = (apiHome !== wantHome);
+              matchIdMap[ourId + "_flip"] = !teamsMatch(apiMatch.homeTeam.name, wantHome);
             } else {
               console.log(`Match ${ourId}: no team-name match found in API for ${R32_TEAMS[numOurId].join(" vs ")} on ${date}`);
             }
@@ -321,18 +331,15 @@ exports.fetchResults = onSchedule(
             const wantAwayName = bracketEntry ? resolveSlot(bracketEntry.s[1], currentResults) : null;
 
             if (wantHomeName && wantAwayName) {
-              const wantHome = normTeam(wantHomeName);
-              const wantAway = normTeam(wantAwayName);
               apiMatch = allApiMatches.find(m => {
-                const apiHome = normTeam(m.homeTeam && m.homeTeam.name);
-                const apiAway = normTeam(m.awayTeam && m.awayTeam.name);
-                return (apiHome === wantHome && apiAway === wantAway) ||
-                       (apiHome === wantAway && apiAway === wantHome);
+                const apiHome = m.homeTeam && m.homeTeam.name;
+                const apiAway = m.awayTeam && m.awayTeam.name;
+                return (teamsMatch(apiHome, wantHomeName) && teamsMatch(apiAway, wantAwayName)) ||
+                       (teamsMatch(apiHome, wantAwayName) && teamsMatch(apiAway, wantHomeName));
               });
               if (apiMatch) {
-                const apiHome = normTeam(apiMatch.homeTeam && apiMatch.homeTeam.name);
                 matchIdMap[ourId] = apiMatch.id;
-                matchIdMap[ourId + "_flip"] = (apiHome !== wantHome);
+                matchIdMap[ourId + "_flip"] = !teamsMatch(apiMatch.homeTeam.name, wantHomeName);
               } else {
                 console.log(`Match ${ourId}: no team-name match found for ${wantHomeName} vs ${wantAwayName} on ${date}`);
               }
