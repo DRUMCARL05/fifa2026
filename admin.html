@@ -337,10 +337,37 @@ function renderLog(){
     return `<div class="log-row"><div class="log-dot"></div><div><div class="log-text"><b>${e.written} result${e.written!==1?"s":""} written</b> · Matches: #${ids}</div><div class="log-time">${fmt}</div></div></div>`;
   }).join("");
 }
+// Group stage qualifiers (1st/2nd per group) — from actual final standings.
+const GROUP_QUALIFIERS={
+  A:{1:"México",          2:"Sudáfrica"},
+  B:{1:"Suiza",           2:"Canadá"},
+  C:{1:"Brasil",          2:"Marruecos"},
+  D:{1:"Estados Unidos",  2:"Australia"},
+  E:{1:"Alemania",        2:"Costa de Marfil"},
+  F:{1:"Países Bajos",    2:"Japón"},
+  G:{1:"Bélgica",         2:"Egipto"},
+  H:{1:"España",          2:"Cabo Verde"},
+  I:{1:"Francia",         2:"Noruega"},
+  J:{1:"Argentina",       2:"Austria"},
+  K:{1:"Colombia",        2:"Portugal"},
+  L:{1:"Inglaterra",      2:"Croacia"},
+};
+// Bracket SLOT tags (which R32 match needs a 3rd-place team), NOT the group the
+// team actually finished 3rd in. Matched against the official R32 bracket.
+const THIRD_QUALIFIERS={
+  E:"Paraguay",
+  I:"Suecia",
+  A:"Ecuador",
+  L:"RD Congo",
+  D:"Bosnia",
+  G:"Senegal",
+  B:"Argelia",
+  K:"Ghana",
+};
 function resolveTeamName(slot){
   if(!slot)return"TBC";
-  if(slot.pos)return`${slot.pos===1?"1st":"2nd"} Group ${slot.g}`;
-  if(slot.third)return`Best 3rd (${slot.third})`;
+  if(slot.pos)return(GROUP_QUALIFIERS[slot.g]&&GROUP_QUALIFIERS[slot.g][slot.pos])||`${slot.pos===1?"1st":"2nd"} Group ${slot.g}`;
+  if(slot.third)return THIRD_QUALIFIERS[slot.third]||`Best 3rd (${slot.third})`;
   if(slot.W){const res=workingResults[slot.W];if(res&&res.h!=null){const hN=resolveTeamName(KO_BY_ID[slot.W]?.s[0]),aN=resolveTeamName(KO_BY_ID[slot.W]?.s[1]);if(res.h>res.a)return hN;if(res.a>res.h)return aN;if(res.pen==="h")return hN;if(res.pen==="a")return aN;}return`W#${slot.W}`;}
   if(slot.L){const res=workingResults[slot.L];if(res&&res.h!=null){const hN=resolveTeamName(KO_BY_ID[slot.L]?.s[0]),aN=resolveTeamName(KO_BY_ID[slot.L]?.s[1]);if(res.h>res.a)return aN;if(res.a>res.h)return hN;if(res.pen==="h")return aN;if(res.pen==="a")return hN;}return`L#${slot.L}`;}
   return"TBC";
