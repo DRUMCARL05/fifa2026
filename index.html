@@ -47,8 +47,10 @@ header{position:sticky;top:0;z-index:50;background:rgba(7,22,26,.92);backdrop-fi
 .huser{display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;color:var(--muted)}
 .hdot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);flex-shrink:0}
 .hchange{background:none;border:none;color:var(--muted);font-size:.72rem;text-decoration:underline;cursor:pointer;font-family:var(--body);padding:0}
-.lang-toggle{background:var(--panel2);border:1px solid var(--line);color:var(--text);font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:6px;cursor:pointer;font-family:var(--body)}
-#lang-toggle-gate{position:absolute;top:1rem;right:1rem;background:var(--panel2);border:1px solid var(--line);color:var(--text);font-size:.7rem;font-weight:700;padding:.3rem .6rem;border-radius:8px;cursor:pointer;font-family:var(--body)}
+.lang-pill{display:inline-flex;align-items:center;gap:.3rem;background:var(--teal);color:#05232B;border:none;font-size:.78rem;font-weight:900;padding:.4rem .7rem;border-radius:999px;cursor:pointer;font-family:var(--body);min-height:32px;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.lang-pill:active{opacity:.85;transform:scale(.97)}
+#lang-toggle-gate{position:absolute;top:1rem;right:1rem}
+#lang-toggle-app{margin-left:.6rem}
 
 /* NAV */
 nav{position:fixed;bottom:0;left:0;right:0;background:rgba(7,22,26,.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;z-index:50}
@@ -202,7 +204,7 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
   <input id="name-input" class="gate-input" type="text" data-i18n-placeholder="gate_placeholder" placeholder="Your name" maxlength="20" autocomplete="off">
   <div id="gate-error" class="gate-error"></div>
   <button class="gate-btn" onclick="startApp()" data-i18n="gate_btn">Let's Go →</button>
-  <button class="lang-toggle" onclick="toggleLang()" id="lang-toggle-gate" type="button"></button>
+  <button class="lang-pill" onclick="toggleLang()" id="lang-toggle-gate" type="button"></button>
 </div>
 
 <div id="app" style="display:none">
@@ -213,7 +215,7 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
         <span class="hdot"></span>
         <span id="h-name">—</span>
         <button class="hchange" onclick="changeName()" data-i18n="change_link">change</button>
-        <button class="hchange" onclick="toggleLang()" id="lang-toggle-app" style="margin-left:.4rem"></button>
+        <button class="lang-pill" onclick="toggleLang()" id="lang-toggle-app"></button>
       </div>
     </div>
   </header>
@@ -639,7 +641,7 @@ function applyTranslationsStatic(){
     const key=el.getAttribute("data-i18n-placeholder");
     el.placeholder=t(key);
   });
-  const nextLabel = lang==="es" ? "EN" : "ES";
+  const nextLabel = lang==="es" ? "🇬🇧 EN" : "🇪🇸 ES";
   const gateBtn=document.getElementById("lang-toggle-gate");
   const appBtn=document.getElementById("lang-toggle-app");
   if(gateBtn) gateBtn.textContent=nextLabel;
