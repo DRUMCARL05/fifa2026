@@ -47,6 +47,8 @@ header{position:sticky;top:0;z-index:50;background:rgba(7,22,26,.92);backdrop-fi
 .huser{display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;color:var(--muted)}
 .hdot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal);flex-shrink:0}
 .hchange{background:none;border:none;color:var(--muted);font-size:.72rem;text-decoration:underline;cursor:pointer;font-family:var(--body);padding:0}
+.lang-toggle{background:var(--panel2);border:1px solid var(--line);color:var(--text);font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:6px;cursor:pointer;font-family:var(--body)}
+#lang-toggle-gate{position:absolute;top:1rem;right:1rem;background:var(--panel2);border:1px solid var(--line);color:var(--text);font-size:.7rem;font-weight:700;padding:.3rem .6rem;border-radius:8px;cursor:pointer;font-family:var(--body)}
 
 /* NAV */
 nav{position:fixed;bottom:0;left:0;right:0;background:rgba(7,22,26,.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;z-index:50}
@@ -192,14 +194,15 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
   <p>Loading…</p>
 </div>
 
-<div id="offline-banner">⚠️ You're offline — changes will sync when connection returns</div>
+<div id="offline-banner" data-i18n="offline_banner">⚠️ You're offline — changes will sync when connection returns</div>
 
 <div id="gate" class="hidden">
-  <h1>WORLD CUP<br><span>PREDICTOR</span><br>2026</h1>
-  <p>Enter your name once. Your picks save automatically to the cloud.</p>
-  <input id="name-input" class="gate-input" type="text" placeholder="Your name" maxlength="20" autocomplete="off">
+  <h1><span data-i18n="gate_h1_1">WORLD CUP</span><br><span data-i18n="gate_h1_2">PREDICTOR</span><br><span data-i18n="gate_h1_3">2026</span></h1>
+  <p data-i18n="gate_p">Enter your name once. Your picks save automatically to the cloud.</p>
+  <input id="name-input" class="gate-input" type="text" data-i18n-placeholder="gate_placeholder" placeholder="Your name" maxlength="20" autocomplete="off">
   <div id="gate-error" class="gate-error"></div>
-  <button class="gate-btn" onclick="startApp()">Let's Go →</button>
+  <button class="gate-btn" onclick="startApp()" data-i18n="gate_btn">Let's Go →</button>
+  <button class="lang-toggle" onclick="toggleLang()" id="lang-toggle-gate" type="button"></button>
 </div>
 
 <div id="app" style="display:none">
@@ -209,7 +212,8 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
       <div class="huser">
         <span class="hdot"></span>
         <span id="h-name">—</span>
-        <button class="hchange" onclick="changeName()">change</button>
+        <button class="hchange" onclick="changeName()" data-i18n="change_link">change</button>
+        <button class="hchange" onclick="toggleLang()" id="lang-toggle-app" style="margin-left:.4rem"></button>
       </div>
     </div>
   </header>
@@ -218,26 +222,26 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
     <!-- PREDICT TAB -->
     <div id="tab-predict" class="tab on">
       <div class="champ-card">
-        <div class="champ-label">⭐ Star Prediction</div>
-        <div class="champ-title">Who lifts the trophy?</div>
-        <span class="champ-badge">+15 PTS</span>
+        <div class="champ-label" data-i18n="star_pred">⭐ Star Prediction</div>
+        <div class="champ-title" data-i18n="who_lifts">Who lifts the trophy?</div>
+        <span class="champ-badge" data-i18n="pts_bonus">+15 PTS</span>
         <select id="champ-select" class="champ-select" onchange="saveChamp(this.value)">
           <option value="">— Choose the tournament winner —</option>
         </select>
-        <div id="champ-locked-msg" class="champ-locked" style="display:none">🔒 Locked — Round of 16 has begun</div>
+        <div id="champ-locked-msg" class="champ-locked" style="display:none" data-i18n="champ_locked">🔒 Locked — Round of 16 has begun</div>
       </div>
 
       <div class="progress-wrap">
-        <div class="progress-lbl"><span>Predictions filled</span><span><b id="prog-done">0</b> / <b id="prog-tot">32</b></span></div>
+        <div class="progress-lbl"><span data-i18n="preds_filled">Predictions filled</span><span><b id="prog-done">0</b> / <b id="prog-tot">32</b></span></div>
         <div class="progress-bar"><div id="prog-fill" class="progress-fill" style="width:0%"></div></div>
       </div>
 
       <div class="subnav">
-        <button class="snav-btn on"  onclick="showRound('R16',this)">Round of 16 ×1</button>
-        <button class="snav-btn"     onclick="showRound('QF',this)">Quarters ×2</button>
-        <button class="snav-btn"     onclick="showRound('SF',this)">Semis ×3</button>
-        <button class="snav-btn"     onclick="showRound('3P',this)">3rd Place ×1</button>
-        <button class="snav-btn"     onclick="showRound('F',this)">Final ×4</button>
+        <button class="snav-btn on"  onclick="showRound('R16',this)" data-i18n="tab_r16">Round of 16 ×1</button>
+        <button class="snav-btn"     onclick="showRound('QF',this)" data-i18n="tab_qf">Quarters ×2</button>
+        <button class="snav-btn"     onclick="showRound('SF',this)" data-i18n="tab_sf">Semis ×3</button>
+        <button class="snav-btn"     onclick="showRound('3P',this)" data-i18n="tab_3p">3rd Place ×1</button>
+        <button class="snav-btn"     onclick="showRound('F',this)" data-i18n="tab_f">Final ×4</button>
       </div>
 
       <div id="round-R16" class="round-panel on"></div>
@@ -250,73 +254,73 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
     <!-- R32 TAB -->
     <div id="tab-r32" class="tab">
       <div style="margin-bottom:1rem">
-        <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px;margin-bottom:.3rem">Round of 32</div>
-        <div style="font-size:.8rem;color:var(--muted);line-height:1.5">Results shown for reference. Predictions open from Round of 16.</div>
+        <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px;margin-bottom:.3rem" data-i18n="r32_title">Round of 32</div>
+        <div style="font-size:.8rem;color:var(--muted);line-height:1.5" data-i18n="r32_sub">Results shown for reference. Predictions open from Round of 16.</div>
       </div>
       <div id="r32-list"></div>
     </div>
 
     <!-- STANDINGS TAB -->
     <div id="tab-standings" class="tab">
-      <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px;margin-bottom:1rem">Standings</div>
+      <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px;margin-bottom:1rem" data-i18n="standings_title">Standings</div>
 
       <div class="stats-grid">
-        <div class="stat-box gold"><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Total pts</div></div>
-        <div class="stat-box"><div class="stat-num" id="s-exact">0</div><div class="stat-lbl">Exact scores</div></div>
-        <div class="stat-box"><div class="stat-num" id="s-correct">0</div><div class="stat-lbl">Correct results</div></div>
+        <div class="stat-box gold"><div class="stat-num" id="s-total">0</div><div class="stat-lbl" data-i18n="stat_total">Total pts</div></div>
+        <div class="stat-box"><div class="stat-num" id="s-exact">0</div><div class="stat-lbl" data-i18n="stat_exact">Exact scores</div></div>
+        <div class="stat-box"><div class="stat-num" id="s-correct">0</div><div class="stat-lbl" data-i18n="stat_correct">Correct results</div></div>
       </div>
 
-      <div class="section-label">Points by round</div>
+      <div class="section-label" data-i18n="section_by_round">Points by round</div>
       <div class="breakdown-grid" id="breakdown-grid"></div>
 
-      <div class="section-label" style="margin-top:1.4rem">Leaderboard</div>
+      <div class="section-label" style="margin-top:1.4rem" data-i18n="section_leaderboard">Leaderboard</div>
       <div class="lb-table" id="lb-table">
-        <div class="lb-loading">Loading scores…</div>
+        <div class="lb-loading" data-i18n="lb_loading">Loading scores…</div>
       </div>
 
-      <button class="share-btn" onclick="shareScore()">📤 Share my score via WhatsApp</button>
+      <button class="share-btn" onclick="shareScore()" data-i18n="share_btn">📤 Share my score via WhatsApp</button>
     </div>
 
     <!-- RULES TAB -->
     <div id="tab-rules" class="tab">
-      <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px;margin-bottom:1rem">How to Play</div>
+      <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px;margin-bottom:1rem" data-i18n="rules_title">How to Play</div>
 
       <div class="rules-card">
-        <h3>Scoring System</h3>
+        <h3 data-i18n="rules_scoring_title">Scoring System</h3>
         <ul>
-          <li><b>4 pts</b> — Exact scoreline (draw) AND correct penalty winner</li>
-          <li><b>3 pts</b> — Exact scoreline</li>
-          <li><b>2 pts</b> — Exact draw score but wrong penalty winner, OR wrong draw score but correct penalty winner</li>
-          <li><b>1 pt</b> — Correct team advances, wrong scoreline</li>
-          <li><b>0 pts</b> — Complete miss</li>
+          <li data-i18n="rules_scoring_4"><b>4 pts</b> — Exact scoreline (draw) AND correct penalty winner</li>
+          <li data-i18n="rules_scoring_3"><b>3 pts</b> — Exact scoreline</li>
+          <li data-i18n="rules_scoring_2"><b>2 pts</b> — Exact draw score but wrong penalty winner, OR wrong draw score but correct penalty winner</li>
+          <li data-i18n="rules_scoring_1"><b>1 pt</b> — Correct team advances, wrong scoreline</li>
+          <li data-i18n="rules_scoring_0"><b>0 pts</b> — Complete miss</li>
         </ul>
       </div>
       <div class="rules-card">
-        <h3>Round Multipliers</h3>
+        <h3 data-i18n="rules_mult_title">Round Multipliers</h3>
         <ul>
-          <li><b>Round of 16</b> — ×1</li>
-          <li><b>Quarter-Finals</b> — ×2</li>
-          <li><b>Semi-Finals</b> — ×3</li>
-          <li><b>3rd Place</b> — ×1</li>
-          <li><b>Final</b> — ×4</li>
+          <li data-i18n="rules_mult_r16"><b>Round of 16</b> — ×1</li>
+          <li data-i18n="rules_mult_qf"><b>Quarter-Finals</b> — ×2</li>
+          <li data-i18n="rules_mult_sf"><b>Semi-Finals</b> — ×3</li>
+          <li data-i18n="rules_mult_3p"><b>3rd Place</b> — ×1</li>
+          <li data-i18n="rules_mult_f"><b>Final</b> — ×4</li>
         </ul>
       </div>
       <div class="rules-card">
-        <h3>Champion Bonus</h3>
-        <p>Predict the tournament winner for a flat <b style="color:var(--gold)">+15 bonus points</b>. Locks when the Round of 16 begins.</p>
+        <h3 data-i18n="rules_champ_title">Champion Bonus</h3>
+        <p data-i18n="rules_champ_body">Predict the tournament winner for a flat <b style="color:var(--gold)">+15 bonus points</b>. Locks when the Round of 16 begins.</p>
       </div>
       <div class="rules-card">
-        <h3>Your Predictions</h3>
-        <p>Picks save instantly to the cloud as you tap. Each match locks automatically at kickoff. If you predict a draw, a penalty winner selector slides in.</p>
+        <h3 data-i18n="rules_preds_title">Your Predictions</h3>
+        <p data-i18n="rules_preds_body">Picks save instantly to the cloud as you tap. Each match locks automatically at kickoff. If you predict a draw, a penalty winner selector slides in.</p>
       </div>
     </div>
   </main>
 
   <nav>
-    <button class="nav-btn on" id="nav-predict"   onclick="showTab('predict')"><span class="ic">⚽</span><span>Predict</span></button>
-    <button class="nav-btn"    id="nav-r32"        onclick="showTab('r32')"><span class="ic">📋</span><span>R32</span></button>
-    <button class="nav-btn"    id="nav-standings"  onclick="showTab('standings')"><span class="ic">🏆</span><span>Standings</span></button>
-    <button class="nav-btn"    id="nav-rules"      onclick="showTab('rules')"><span class="ic">📖</span><span>Rules</span></button>
+    <button class="nav-btn on" id="nav-predict"   onclick="showTab('predict')"><span class="ic">⚽</span><span data-i18n="nav_predict">Predict</span></button>
+    <button class="nav-btn"    id="nav-r32"        onclick="showTab('r32')"><span class="ic">📋</span><span data-i18n="nav_r32">R32</span></button>
+    <button class="nav-btn"    id="nav-standings"  onclick="showTab('standings')"><span class="ic">🏆</span><span data-i18n="nav_standings">Standings</span></button>
+    <button class="nav-btn"    id="nav-rules"      onclick="showTab('rules')"><span class="ic">📖</span><span data-i18n="nav_rules">Rules</span></button>
   </nav>
 </div>
 
@@ -345,34 +349,71 @@ const db    = getFirestore(fbApp);
 /* ═══════════════════════════════════════════════
    TOURNAMENT DATA
 ═══════════════════════════════════════════════ */
+// GROUPS stores team CODES (language-neutral), not display names
 const GROUPS = {
-  A:["México","Sudáfrica","Corea del Sur","República Checa"],
-  B:["Canadá","Bosnia","Catar","Suiza"],
-  C:["Brasil","Marruecos","Haití","Escocia"],
-  D:["Estados Unidos","Paraguay","Australia","Turquía"],
-  E:["Alemania","Curazao","Costa de Marfil","Ecuador"],
-  F:["Países Bajos","Japón","Suecia","Túnez"],
-  G:["Bélgica","Egipto","Irán","Nueva Zelanda"],
-  H:["España","Cabo Verde","Arabia Saudí","Uruguay"],
-  I:["Francia","Senegal","Irak","Noruega"],
-  J:["Argentina","Argelia","Austria","Jordania"],
-  K:["Portugal","RD Congo","Uzbekistán","Colombia"],
-  L:["Inglaterra","Croacia","Ghana","Panamá"]
+  A:["MEX","RSA","KOR","CZE"],
+  B:["CAN","BIH","QAT","SUI"],
+  C:["BRA","MAR","HAI","SCO"],
+  D:["USA","PAR","AUS","TUR"],
+  E:["GER","CUW","CIV","ECU"],
+  F:["NED","JPN","SWE","TUN"],
+  G:["BEL","EGY","IRN","NZL"],
+  H:["ESP","CPV","KSA","URU"],
+  I:["FRA","SEN","IRQ","NOR"],
+  J:["ARG","ALG","AUT","JOR"],
+  K:["POR","COD","UZB","COL"],
+  L:["ENG","CRO","GHA","PAN"],
 };
+// Team display names, keyed by neutral 3-letter code
+const TEAMS_ES = {
+  MEX:"México", RSA:"Sudáfrica", KOR:"Corea del Sur", CZE:"República Checa",
+  CAN:"Canadá", BIH:"Bosnia", QAT:"Catar", SUI:"Suiza",
+  BRA:"Brasil", MAR:"Marruecos", HAI:"Haití", SCO:"Escocia",
+  USA:"Estados Unidos", PAR:"Paraguay", AUS:"Australia", TUR:"Turquía",
+  GER:"Alemania", CUW:"Curazao", CIV:"Costa de Marfil", ECU:"Ecuador",
+  NED:"Países Bajos", JPN:"Japón", SWE:"Suecia", TUN:"Túnez",
+  BEL:"Bélgica", EGY:"Egipto", IRN:"Irán", NZL:"Nueva Zelanda",
+  ESP:"España", CPV:"Cabo Verde", KSA:"Arabia Saudí", URU:"Uruguay",
+  FRA:"Francia", SEN:"Senegal", IRQ:"Irak", NOR:"Noruega",
+  ARG:"Argentina", ALG:"Argelia", AUT:"Austria", JOR:"Jordania",
+  POR:"Portugal", COD:"RD Congo", UZB:"Uzbekistán", COL:"Colombia",
+  ENG:"Inglaterra", CRO:"Croacia", GHA:"Ghana", PAN:"Panamá",
+};
+const TEAMS_EN = {
+  MEX:"Mexico", RSA:"South Africa", KOR:"South Korea", CZE:"Czech Republic",
+  CAN:"Canada", BIH:"Bosnia", QAT:"Qatar", SUI:"Switzerland",
+  BRA:"Brazil", MAR:"Morocco", HAI:"Haiti", SCO:"Scotland",
+  USA:"United States", PAR:"Paraguay", AUS:"Australia", TUR:"Turkey",
+  GER:"Germany", CUW:"Curacao", CIV:"Ivory Coast", ECU:"Ecuador",
+  NED:"Netherlands", JPN:"Japan", SWE:"Sweden", TUN:"Tunisia",
+  BEL:"Belgium", EGY:"Egypt", IRN:"Iran", NZL:"New Zealand",
+  ESP:"Spain", CPV:"Cabo Verde", KSA:"Saudi Arabia", URU:"Uruguay",
+  FRA:"France", SEN:"Senegal", IRQ:"Iraq", NOR:"Norway",
+  ARG:"Argentina", ALG:"Algeria", AUT:"Austria", JOR:"Jordan",
+  POR:"Portugal", COD:"DR Congo", UZB:"Uzbekistan", COL:"Colombia",
+  ENG:"England", CRO:"Croatia", GHA:"Ghana", PAN:"Panama",
+};
+// Flags keyed by code — single map, shared across both languages
 const FLAG={
-  "México":"🇲🇽","Sudáfrica":"🇿🇦","Corea del Sur":"🇰🇷","República Checa":"🇨🇿",
-  "Canadá":"🇨🇦","Bosnia":"🇧🇦","Catar":"🇶🇦","Suiza":"🇨🇭",
-  "Brasil":"🇧🇷","Marruecos":"🇲🇦","Haití":"🇭🇹","Escocia":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "Estados Unidos":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇦🇺","Turquía":"🇹🇷",
-  "Alemania":"🇩🇪","Curazao":"🇨🇼","Costa de Marfil":"🇨🇮","Ecuador":"🇪🇨",
-  "Países Bajos":"🇳🇱","Japón":"🇯🇵","Suecia":"🇸🇪","Túnez":"🇹🇳",
-  "Bélgica":"🇧🇪","Egipto":"🇪🇬","Irán":"🇮🇷","Nueva Zelanda":"🇳🇿",
-  "España":"🇪🇸","Cabo Verde":"🇨🇻","Arabia Saudí":"🇸🇦","Uruguay":"🇺🇾",
-  "Francia":"🇫🇷","Senegal":"🇸🇳","Irak":"🇮🇶","Noruega":"🇳🇴",
-  "Argentina":"🇦🇷","Argelia":"🇩🇿","Austria":"🇦🇹","Jordania":"🇯🇴",
-  "Portugal":"🇵🇹","RD Congo":"🇨🇩","Uzbekistán":"🇺🇿","Colombia":"🇨🇴",
-  "Inglaterra":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croacia":"🇭🇷","Ghana":"🇬🇭","Panamá":"🇵🇦"
+  MEX:"🇲🇽", RSA:"🇿🇦", KOR:"🇰🇷", CZE:"🇨🇿",
+  CAN:"🇨🇦", BIH:"🇧🇦", QAT:"🇶🇦", SUI:"🇨🇭",
+  BRA:"🇧🇷", MAR:"🇲🇦", HAI:"🇭🇹", SCO:"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+  USA:"🇺🇸", PAR:"🇵🇾", AUS:"🇦🇺", TUR:"🇹🇷",
+  GER:"🇩🇪", CUW:"🇨🇼", CIV:"🇨🇮", ECU:"🇪🇨",
+  NED:"🇳🇱", JPN:"🇯🇵", SWE:"🇸🇪", TUN:"🇹🇳",
+  BEL:"🇧🇪", EGY:"🇪🇬", IRN:"🇮🇷", NZL:"🇳🇿",
+  ESP:"🇪🇸", CPV:"🇨🇻", KSA:"🇸🇦", URU:"🇺🇾",
+  FRA:"🇫🇷", SEN:"🇸🇳", IRQ:"🇮🇶", NOR:"🇳🇴",
+  ARG:"🇦🇷", ALG:"🇩🇿", AUT:"🇦🇹", JOR:"🇯🇴",
+  POR:"🇵🇹", COD:"🇨🇩", UZB:"🇺🇿", COL:"🇨🇴",
+  ENG:"🏴󠁧󠁢󠁥󠁮󠁧󠁿", CRO:"🇭🇷", GHA:"🇬🇭", PAN:"🇵🇦",
 };
+// Returns the display name for a team code in the current language
+function teamName(code){
+  if(!code) return code;
+  const table = lang==="en" ? TEAMS_EN : TEAMS_ES;
+  return table[code] || code;
+}
 const KO=[
   {id:73, r:"R32",s:[{pos:2,g:"A"},{pos:2,g:"B"}]},
   {id:74, r:"R32",s:[{pos:1,g:"E"},{third:"E"}]},
@@ -423,15 +464,149 @@ const KICKOFF={
 };
 const KO_APPROX=new Set([97,98,99,100,101,102,103,104]);
 const ROUND_MULT={R16:1,QF:2,SF:3,"3P":1,F:4};
-const ROUND_LABEL={R16:"Round of 16",QF:"Quarter-Finals",SF:"Semi-Finals","3P":"3rd Place",F:"Final"};
 const CHAMP_LOCK=new Date("2026-07-04T17:00:00Z");
 const LS_USER="qp26_user";
+const LS_LANG="qp26_lang";
+
+/* ═══════════════════════════════════════════════
+   I18N — UI strings, Spanish (default) and English
+═══════════════════════════════════════════════ */
+const STRINGS_ES={
+  champ_choose:"— Elige al campeón del torneo —",
+  group_label:"Grupo",
+  match_num:"Partido",
+  teams_tbc:"equipos por confirmar",
+  pts_short:"pts",
+  pen_title:"¿Quién gana en penales?",
+  tbc:"Por confirmar",
+  vs:"vs",
+  ord_1st:"1°", ord_2nd:"2°",
+  grp_short:"Grupo",
+  best_3rd:"Mejor 3°",
+  winner_short:"G",
+  nav_predict:"Predecir", nav_r32:"R32", nav_standings:"Tabla", nav_rules:"Reglas",
+  round_r16:"Octavos de Final", round_qf:"Cuartos de Final", round_sf:"Semifinal",
+  round_3p:"3er Lugar", round_f:"Final",
+  tab_r16:"Octavos ×1", tab_qf:"Cuartos ×2", tab_sf:"Semis ×3", tab_3p:"3er Lugar ×1", tab_f:"Final ×4",
+  star_pred:"⭐ Predicción Estrella",
+  who_lifts:"¿Quién levanta el trofeo?",
+  pts_bonus:"+15 PTS",
+  champ_locked:"🔒 Bloqueado — Comenzaron los Octavos de Final",
+  preds_filled:"Predicciones completadas",
+  r32_title:"Octavos Previos (Ronda de 32)",
+  r32_sub:"Resultados solo de referencia. Las predicciones inician en Octavos de Final.",
+  standings_title:"Tabla de Posiciones",
+  stat_total:"Pts totales", stat_exact:"Marcadores exactos", stat_correct:"Resultados correctos",
+  section_by_round:"Puntos por ronda",
+  section_leaderboard:"Tabla de Líderes",
+  share_btn:"📤 Compartir mi puntaje por WhatsApp",
+  rules_title:"Cómo Jugar",
+  rules_scoring_title:"Sistema de Puntuación",
+  rules_scoring_4:"<b>4 pts</b> — Marcador exacto (empate) Y ganador correcto en penales",
+  rules_scoring_3:"<b>3 pts</b> — Marcador exacto",
+  rules_scoring_2:"<b>2 pts</b> — Empate exacto pero penal incorrecto, O empate incorrecto pero penal correcto",
+  rules_scoring_1:"<b>1 pt</b> — Equipo correcto avanza, marcador incorrecto",
+  rules_scoring_0:"<b>0 pts</b> — Fallo completo",
+  rules_mult_title:"Multiplicadores por Ronda",
+  rules_mult_r16:"<b>Octavos de Final</b> — ×1",
+  rules_mult_qf:"<b>Cuartos de Final</b> — ×2",
+  rules_mult_sf:"<b>Semifinal</b> — ×3",
+  rules_mult_3p:"<b>3er Lugar</b> — ×1",
+  rules_mult_f:"<b>Final</b> — ×4",
+  rules_champ_title:"Bono de Campeón",
+  rules_champ_body:'Predice al campeón del torneo para un bono fijo de <b style="color:var(--gold)">+15 puntos</b>. Se bloquea cuando comienzan los Octavos de Final.',
+  rules_preds_title:"Tus Predicciones",
+  rules_preds_body:"Tus selecciones se guardan al instante en la nube mientras tocas la pantalla. Cada partido se bloquea automáticamente al inicio. Si predices un empate, aparece un selector de penales.",
+  gate_h1_1:"PREDICTOR", gate_h1_2:"MUNDIAL", gate_h1_3:"2026",
+  gate_p:"Escribe tu nombre una vez. Tus predicciones se guardan automáticamente en la nube.",
+  gate_placeholder:"Tu nombre",
+  gate_btn:"Vamos →",
+  gate_error_name:"Por favor escribe tu nombre.",
+  change_link:"cambiar",
+  lb_loading:"Cargando puntajes…",
+  lb_no_scores:"Aún no hay puntajes — aparecerán aquí cuando se registren resultados.",
+  lb_you:"TÚ",
+  pts_label:"PTS",
+  offline_banner:"⚠️ Estás sin conexión — los cambios se sincronizarán al volver",
+  toast_saved:"Guardado ✓",
+  toast_saved_local:"Guardado localmente — se sincronizará al volver la conexión",
+  match_tbc:"equipos por confirmar",
+};
+const STRINGS_EN={
+  champ_choose:"— Choose the tournament winner —",
+  group_label:"Group",
+  match_num:"Match",
+  teams_tbc:"teams TBC",
+  pts_short:"pts",
+  pen_title:"Who wins the penalty shootout?",
+  tbc:"TBC",
+  vs:"vs",
+  ord_1st:"1st", ord_2nd:"2nd",
+  grp_short:"Grp",
+  best_3rd:"Best 3rd",
+  winner_short:"W",
+  nav_predict:"Predict", nav_r32:"R32", nav_standings:"Standings", nav_rules:"Rules",
+  round_r16:"Round of 16", round_qf:"Quarter-Finals", round_sf:"Semi-Finals",
+  round_3p:"3rd Place", round_f:"Final",
+  tab_r16:"Round of 16 ×1", tab_qf:"Quarters ×2", tab_sf:"Semis ×3", tab_3p:"3rd Place ×1", tab_f:"Final ×4",
+  star_pred:"⭐ Star Prediction",
+  who_lifts:"Who lifts the trophy?",
+  pts_bonus:"+15 PTS",
+  champ_locked:"🔒 Locked — Round of 16 has begun",
+  preds_filled:"Predictions filled",
+  r32_title:"Round of 32",
+  r32_sub:"Results shown for reference. Predictions open from Round of 16.",
+  standings_title:"Standings",
+  stat_total:"Total pts", stat_exact:"Exact scores", stat_correct:"Correct results",
+  section_by_round:"Points by round",
+  section_leaderboard:"Leaderboard",
+  share_btn:"📤 Share my score via WhatsApp",
+  rules_title:"How to Play",
+  rules_scoring_title:"Scoring System",
+  rules_scoring_4:"<b>4 pts</b> — Exact scoreline (draw) AND correct penalty winner",
+  rules_scoring_3:"<b>3 pts</b> — Exact scoreline",
+  rules_scoring_2:"<b>2 pts</b> — Exact draw score but wrong penalty winner, OR wrong draw score but correct penalty winner",
+  rules_scoring_1:"<b>1 pt</b> — Correct team advances, wrong scoreline",
+  rules_scoring_0:"<b>0 pts</b> — Complete miss",
+  rules_mult_title:"Round Multipliers",
+  rules_mult_r16:"<b>Round of 16</b> — ×1",
+  rules_mult_qf:"<b>Quarter-Finals</b> — ×2",
+  rules_mult_sf:"<b>Semi-Finals</b> — ×3",
+  rules_mult_3p:"<b>3rd Place</b> — ×1",
+  rules_mult_f:"<b>Final</b> — ×4",
+  rules_champ_title:"Champion Bonus",
+  rules_champ_body:'Predict the tournament winner for a flat <b style="color:var(--gold)">+15 bonus points</b>. Locks when the Round of 16 begins.',
+  rules_preds_title:"Your Predictions",
+  rules_preds_body:"Picks save instantly to the cloud as you tap. Each match locks automatically at kickoff. If you predict a draw, a penalty winner selector slides in.",
+  gate_h1_1:"WORLD CUP", gate_h1_2:"PREDICTOR", gate_h1_3:"2026",
+  gate_p:"Enter your name once. Your picks save automatically to the cloud.",
+  gate_placeholder:"Your name",
+  gate_btn:"Let's Go →",
+  gate_error_name:"Please enter your name.",
+  change_link:"change",
+  lb_loading:"Loading scores…",
+  lb_no_scores:"No scores yet — results will appear here once matches are recorded.",
+  lb_you:"YOU",
+  pts_label:"PTS",
+  offline_banner:"⚠️ You're offline — changes will sync when connection returns",
+  toast_saved:"Saved ✓",
+  toast_saved_local:"Saved locally — will sync when online",
+  match_tbc:"teams TBC",
+};
+const ROUND_LABEL_KEY={R16:"round_r16",QF:"round_qf",SF:"round_sf","3P":"round_3p",F:"round_f"};
 
 /* ═══════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════ */
 let userName="", predictions={}, champPick="", liveResults={}, allPlayers=[];
 let saveTimer=null, unsubResults=null, unsubPlayers=null;
+let lang=localStorage.getItem(LS_LANG)||"es";
+
+// Translation helper — returns the UI string for `key` in the current language
+function t(key){
+  const table = lang==="en" ? STRINGS_EN : STRINGS_ES;
+  return (table[key]!=null) ? table[key] : (STRINGS_ES[key]!=null ? STRINGS_ES[key] : key);
+}
 
 /* ═══════════════════════════════════════════════
    BOOT
@@ -440,6 +615,7 @@ window.addEventListener("online",  ()=>{ document.getElementById("offline-banner
 window.addEventListener("offline", ()=>{ document.getElementById("offline-banner").style.display="block"; });
 
 (async()=>{
+  applyTranslationsStatic(); // translate gate screen immediately, before any Firestore/login work
   const saved=localStorage.getItem(LS_USER);
   if(saved){
     userName=saved;
@@ -451,9 +627,29 @@ window.addEventListener("offline", ()=>{ document.getElementById("offline-banner
   document.getElementById("name-input").addEventListener("keydown",e=>{ if(e.key==="Enter") startApp(); });
 })();
 
+// Lightweight static-only translation pass usable before the app/Firestore boots
+// (applyTranslations() also rebuilds dynamic match content, which needs liveResults
+// to exist first — this one only touches data-i18n tagged static elements).
+function applyTranslationsStatic(){
+  document.querySelectorAll("[data-i18n]").forEach(el=>{
+    const key=el.getAttribute("data-i18n");
+    el.innerHTML=t(key);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach(el=>{
+    const key=el.getAttribute("data-i18n-placeholder");
+    el.placeholder=t(key);
+  });
+  const nextLabel = lang==="es" ? "EN" : "ES";
+  const gateBtn=document.getElementById("lang-toggle-gate");
+  const appBtn=document.getElementById("lang-toggle-app");
+  if(gateBtn) gateBtn.textContent=nextLabel;
+  if(appBtn) appBtn.textContent=nextLabel;
+  document.documentElement.lang = lang;
+}
+
 async function startApp(){
   const v=document.getElementById("name-input").value.trim();
-  if(!v){ document.getElementById("gate-error").textContent="Please enter your name."; return; }
+  if(!v){ document.getElementById("gate-error").textContent=t("gate_error_name"); return; }
   userName=v;
   localStorage.setItem(LS_USER,v);
   document.getElementById("gate").classList.add("hidden");
@@ -468,7 +664,7 @@ async function boot(){
     if(snap.exists()){
       const d=snap.data();
       predictions=d.predictions||{};
-      champPick=d.champion||"";
+      champPick=migrateChampPick(d.champion||"");
     }
   }catch(e){ console.warn("Firestore read failed, using empty state",e); }
 
@@ -496,6 +692,7 @@ async function boot(){
   buildAllRounds();
   buildR32Tab();
   updateProgress();
+  applyTranslations();
 }
 
 function changeName(){
@@ -504,6 +701,30 @@ function changeName(){
   localStorage.removeItem(LS_USER);
   location.reload();
 }
+
+/* ═══════════════════════════════════════════════
+   LANGUAGE
+═══════════════════════════════════════════════ */
+// Applies translated text to every element tagged with data-i18n / data-i18n-placeholder,
+// updates the language-toggle button labels, and refreshes dynamically-built content
+// (match cards, R32 list, champion select, standings) so they pick up the new language too.
+function applyTranslations(){
+  applyTranslationsStatic();
+
+  // Re-render dynamic content that embeds translated team names / strings
+  if(document.getElementById("app").style.display!=="none"){
+    buildChampSelect();
+    buildAllRounds();
+    buildR32Tab();
+    if(document.getElementById("tab-standings").classList.contains("on")) renderStandings();
+  }
+}
+
+window.toggleLang=function(){
+  lang = lang==="es" ? "en" : "es";
+  localStorage.setItem(LS_LANG, lang);
+  applyTranslations();
+};
 
 /* ═══════════════════════════════════════════════
    TABS
@@ -530,14 +751,14 @@ window.showRound=function(r,btn){
 function buildChampSelect(){
   const sel=document.getElementById("champ-select");
   const locked=new Date()>=CHAMP_LOCK;
-  sel.innerHTML=`<option value="">— Choose the tournament winner —</option>`;
+  sel.innerHTML=`<option value="">${esc(t("champ_choose"))}</option>`;
   Object.keys(GROUPS).forEach(g=>{
     const og=document.createElement("optgroup");
-    og.label="Group "+g;
-    GROUPS[g].forEach(t=>{
+    og.label=t("group_label")+" "+g;
+    GROUPS[g].forEach(code=>{
       const o=document.createElement("option");
-      o.value=t; o.textContent=(FLAG[t]||"")+" "+t;
-      if(t===champPick) o.selected=true;
+      o.value=code; o.textContent=(FLAG[code]||"")+" "+teamName(code);
+      if(code===champPick) o.selected=true;
       og.appendChild(o);
     });
     sel.appendChild(og);
@@ -545,8 +766,19 @@ function buildChampSelect(){
   if(locked){
     sel.disabled=true;
     document.getElementById("champ-locked-msg").style.display="block";
-    if(champPick){ sel.innerHTML=`<option value="${esc(champPick)}" selected>${FLAG[champPick]||""} ${esc(champPick)}</option>`; }
+    if(champPick){ sel.innerHTML=`<option value="${esc(champPick)}" selected>${FLAG[champPick]||""} ${esc(teamName(champPick))}</option>`; }
   }
+}
+
+// One-time migration: older saved picks stored the Spanish team NAME
+// (e.g. "Argentina") instead of a code. If what we loaded isn't a known
+// code, try to resolve it as a legacy Spanish name so existing picks
+// aren't silently lost when this version ships.
+function migrateChampPick(val){
+  if(!val) return val;
+  if(TEAMS_ES[val]||TEAMS_EN[val]) return val; // already a valid code (coincidentally also matches some 3-letter inputs, safe)
+  const found=Object.keys(TEAMS_ES).find(code=>TEAMS_ES[code]===val);
+  return found||val;
 }
 
 window.saveChamp=function(val){
@@ -563,19 +795,21 @@ function resolveTeams(mid){
   return {hT:resolveSlot(m.s[0]),aT:resolveSlot(m.s[1])};
 }
 // Group stage qualifiers (1st/2nd per group) — from actual final standings.
+// Stores team CODES (language-neutral); resolveSlot/buildMatchCard etc. work
+// with codes throughout, only converting to display text via teamName() at render time.
 const GROUP_QUALIFIERS={
-  A:{1:"México",          2:"Sudáfrica"},
-  B:{1:"Suiza",           2:"Canadá"},
-  C:{1:"Brasil",          2:"Marruecos"},
-  D:{1:"Estados Unidos",  2:"Australia"},
-  E:{1:"Alemania",        2:"Costa de Marfil"},
-  F:{1:"Países Bajos",    2:"Japón"},
-  G:{1:"Bélgica",         2:"Egipto"},
-  H:{1:"España",          2:"Cabo Verde"},
-  I:{1:"Francia",         2:"Noruega"},
-  J:{1:"Argentina",       2:"Austria"},
-  K:{1:"Colombia",        2:"Portugal"},
-  L:{1:"Inglaterra",      2:"Croacia"},
+  A:{1:"MEX", 2:"RSA"},
+  B:{1:"SUI", 2:"CAN"},
+  C:{1:"BRA", 2:"MAR"},
+  D:{1:"USA", 2:"AUS"},
+  E:{1:"GER", 2:"CIV"},
+  F:{1:"NED", 2:"JPN"},
+  G:{1:"BEL", 2:"EGY"},
+  H:{1:"ESP", 2:"CPV"},
+  I:{1:"FRA", 2:"NOR"},
+  J:{1:"ARG", 2:"AUT"},
+  K:{1:"COL", 2:"POR"},
+  L:{1:"ENG", 2:"CRO"},
 };
 // IMPORTANT: these letters are bracket SLOT tags (which R32 match needs a 3rd-place
 // team), NOT the group the team actually finished 3rd in. Mapped 1:1 against the
@@ -589,14 +823,14 @@ const GROUP_QUALIFIERS={
 //   slot B -> Match 85 -> Algeria  (actual 3rd, Group J)
 //   slot K -> Match 87 -> Ghana    (actual 3rd, Group L)
 const THIRD_QUALIFIERS={
-  E:"Paraguay",
-  I:"Suecia",
-  A:"Ecuador",
-  L:"RD Congo",
-  D:"Bosnia",
-  G:"Senegal",
-  B:"Argelia",
-  K:"Ghana",
+  E:"PAR",
+  I:"SWE",
+  A:"ECU",
+  L:"COD",
+  D:"BIH",
+  G:"SEN",
+  B:"ALG",
+  K:"GHA",
 };
 
 function resolveSlot(slot){
@@ -648,7 +882,7 @@ function buildMatchCard(m){
 
   if(!hT&&!aT){
     return `<div class="pending-card">
-      <div class="pending-teams">Match #${id} — teams TBC</div>
+      <div class="pending-teams">${t("match_num")} #${id} — ${t("teams_tbc")}</div>
       <div class="pending-date">${kickStr}</div>
     </div>`;
   }
@@ -659,7 +893,8 @@ function buildMatchCard(m){
   const dis=locked?"disabled":"";
   const savedCls=(h!=null&&a!=null)?"saved":"";
   const lockedCls=locked?"locked":"";
-  const hName=hT||"?", aName=aT||"?";
+  const hCode=hT||null, aCode=aT||null;
+  const hDisp=hCode?teamName(hCode):"?", aDisp=aCode?teamName(aCode):"?";
 
   let resultBadge="";
   if(result&&result.h!=null){
@@ -667,7 +902,7 @@ function buildMatchCard(m){
     const ptsCls=sc.base>=4?"pts-4":sc.base>=3?"pts-3":sc.base>=2?"pts-2":sc.base>=1?"pts-1":"pts-0";
     resultBadge=`<div class="result-row">
       <span class="real-score">${result.h}–${result.a}${result.pen?" ("+result.pen.toUpperCase()+"PKs)":""}</span>
-      <span class="pts-badge ${ptsCls}">+${sc.total} pts</span>
+      <span class="pts-badge ${ptsCls}">+${sc.total} ${t("pts_short")}</span>
     </div>`;
   }
 
@@ -681,7 +916,7 @@ function buildMatchCard(m){
       <span>${mult>1?`<span class="mult-badge">×${mult}</span> `:""}<span class="saved-tick">✓</span></span>
     </div>
     <div class="team-row">
-      <div class="team-info"><span class="team-flag">${FLAG[hName]||"🏳"}</span><span class="team-name">${esc(hName)}</span></div>
+      <div class="team-info"><span class="team-flag">${FLAG[hCode]||"🏳"}</span><span class="team-name">${esc(hDisp)}</span></div>
       <div class="stepper">
         <button class="step-btn" onclick="step(${id},'h',-1)" ${dis}>−</button>
         <span class="score-val" id="sv-${id}-h">${h!=null?h:"–"}</span>
@@ -690,7 +925,7 @@ function buildMatchCard(m){
     </div>
     <div class="vs-line"></div>
     <div class="team-row">
-      <div class="team-info"><span class="team-flag">${FLAG[aName]||"🏳"}</span><span class="team-name">${esc(aName)}</span></div>
+      <div class="team-info"><span class="team-flag">${FLAG[aCode]||"🏳"}</span><span class="team-name">${esc(aDisp)}</span></div>
       <div class="stepper">
         <button class="step-btn" onclick="step(${id},'a',-1)" ${dis}>−</button>
         <span class="score-val" id="sv-${id}-a">${a!=null?a:"–"}</span>
@@ -699,10 +934,10 @@ function buildMatchCard(m){
     </div>
     <div class="penalty-box ${pkShow}" id="pk-${id}">
       <div class="pk-inner">
-        <div class="pk-title">Who wins the penalty shootout?</div>
+        <div class="pk-title">${t("pen_title")}</div>
         <div class="pk-btns">
-          <button class="pk-btn ${pkH}" id="pkb-${id}-h" onclick="setPk(${id},'h',this)" ${dis}>${FLAG[hName]||"🏳"} ${esc(hName)}</button>
-          <button class="pk-btn ${pkA}" id="pkb-${id}-a" onclick="setPk(${id},'a',this)" ${dis}>${FLAG[aName]||"🏳"} ${esc(aName)}</button>
+          <button class="pk-btn ${pkH}" id="pkb-${id}-h" onclick="setPk(${id},'h',this)" ${dis}>${FLAG[hCode]||"🏳"} ${esc(hDisp)}</button>
+          <button class="pk-btn ${pkA}" id="pkb-${id}-a" onclick="setPk(${id},'a',this)" ${dis}>${FLAG[aCode]||"🏳"} ${esc(aDisp)}</button>
         </div>
       </div>
     </div>
@@ -754,9 +989,9 @@ async function persistToCloud(){
       predictions: predictions,
       updatedAt: Date.now()
     },{merge:true});
-    showToast("Saved ✓");
+    showToast(t("toast_saved"));
   }catch(e){
-    showToast("Saved locally — will sync when online");
+    showToast(t("toast_saved_local"));
     console.warn("Firestore write failed",e);
   }
 }
@@ -840,18 +1075,18 @@ function renderStandings(){
   const grid=document.getElementById("breakdown-grid");
   grid.innerHTML=["R16","QF","SF","3P","F"].map(r=>{
     const d=me.byRound[r]||{pts:0,exact:0,correct:0};
-    return `<div class="bk-box"><div class="bk-round">${ROUND_LABEL[r]}</div><div class="bk-pts">${d.pts}</div><div class="bk-sub">${d.exact} exact · ${d.correct} correct</div></div>`;
+    return `<div class="bk-box"><div class="bk-round">${esc(t(ROUND_LABEL_KEY[r]))}</div><div class="bk-pts">${d.pts}</div><div class="bk-sub">${d.exact} ${esc(t("stat_exact")).toLowerCase()} · ${d.correct} ${esc(t("stat_correct")).toLowerCase()}</div></div>`;
   }).join("");
 
   // Leaderboard from all players in Firestore
   const lb=document.getElementById("lb-table");
   if(allPlayers.length===0){
-    lb.innerHTML=`<div class="lb-loading">No scores yet — results will appear here once matches are recorded.</div>`;
+    lb.innerHTML=`<div class="lb-loading">${esc(t("lb_no_scores"))}</div>`;
     return;
   }
   const rows=allPlayers.map(p=>{
-    const t=tallyPlayer(p.predictions||{},p.champion||"");
-    return {name:p.name||p.id,slug:p.id,pts:t.totalPts,exact:t.exact,correct:t.correct,champBonus:t.champBonus};
+    const tally=tallyPlayer(p.predictions||{},p.champion||"");
+    return {name:p.name||p.id,slug:p.id,pts:tally.totalPts,exact:tally.exact,correct:tally.correct,champBonus:tally.champBonus};
   }).sort((a,b)=>b.pts-a.pts||b.exact-a.exact||a.name.localeCompare(b.name));
 
   const medals=["🥇","🥈","🥉"];
@@ -861,8 +1096,8 @@ function renderStandings(){
     return `<div class="lb-row ${isYou?"you":""}">
       <div class="lb-pos">${pos}</div>
       <div>
-        <div class="lb-name">${esc(r.name)}${isYou?` <span class="lb-you">YOU</span>`:""}</div>
-        <div class="lb-sub">${r.exact} exact · ${r.correct} correct${r.champBonus?` · 🏆 +${r.champBonus}`:""}</div>
+        <div class="lb-name">${esc(r.name)}${isYou?` <span class="lb-you">${esc(t("lb_you"))}</span>`:""}</div>
+        <div class="lb-sub">${r.exact} ${esc(t("stat_exact")).toLowerCase()} · ${r.correct} ${esc(t("stat_correct")).toLowerCase()}${r.champBonus?` · 🏆 +${r.champBonus}`:""}</div>
       </div>
       <div class="lb-pts">${r.pts}<small>PTS</small></div>
     </div>`;
@@ -877,12 +1112,13 @@ function buildR32Tab(){
   document.getElementById("r32-list").innerHTML=r32.map(m=>{
     const res=liveResults[m.id];
     const kick=fmtKick(m.id);
-    const hName=resolveSlot(m.s[0])||labelSlot(m.s[0]);
-    const aName=resolveSlot(m.s[1])||labelSlot(m.s[1]);
-    const hLabel=`${FLAG[hName]?FLAG[hName]+" ":""}${esc(hName)}`;
-    const aLabel=`${FLAG[aName]?FLAG[aName]+" ":""}${esc(aName)}`;
+    const hCode=resolveSlot(m.s[0]), aCode=resolveSlot(m.s[1]);
+    const hDisp=hCode?teamName(hCode):labelSlot(m.s[0]);
+    const aDisp=aCode?teamName(aCode):labelSlot(m.s[1]);
+    const hLabel=`${hCode&&FLAG[hCode]?FLAG[hCode]+" ":""}${esc(hDisp)}`;
+    const aLabel=`${aCode&&FLAG[aCode]?FLAG[aCode]+" ":""}${esc(aDisp)}`;
     const pending=!res||res.h==null;
-    const scoreStr=pending?(hasStarted(m.id)?"TBC":"vs"):`${res.h}–${res.a}${res.pen?" ("+res.pen.toUpperCase()+"PKs)":""}`;
+    const scoreStr=pending?(hasStarted(m.id)?t("tbc"):t("vs")):`${res.h}–${res.a}${res.pen?" ("+res.pen.toUpperCase()+"PKs)":""}`;
     return `<div class="r32-card ${pending?"r32-pending":""}">
       <div class="r32-date">${kick} · #${m.id}</div>
       <div class="r32-home">${hLabel}</div>
@@ -893,10 +1129,10 @@ function buildR32Tab(){
 }
 
 function labelSlot(s){
-  if(s.pos) return `${s.pos===1?"1st":"2nd"} Grp ${s.g}`;
-  if(s.third) return `Best 3rd`;
-  if(s.W) return `W#${s.W}`;
-  return "TBC";
+  if(s.pos) return `${s.pos===1?t("ord_1st"):t("ord_2nd")} ${t("grp_short")} ${s.g}`;
+  if(s.third) return t("best_3rd");
+  if(s.W) return `${t("winner_short")}#${s.W}`;
+  return t("tbc");
 }
 
 /* ═══════════════════════════════════════════════
@@ -904,7 +1140,7 @@ function labelSlot(s){
 ═══════════════════════════════════════════════ */
 window.shareScore=function(){
   const{totalPts,exact,correct}=tallyPlayer(predictions,champPick);
-  const msg=`⚽ World Cup Predictor 2026\n${userName}: ${totalPts} pts\n${exact} exact scores · ${correct} correct results 🏆`;
+  const msg=`⚽ World Cup Predictor 2026\n${userName}: ${totalPts} ${t("pts_short")}\n${exact} ${t("stat_exact").toLowerCase()} · ${correct} ${t("stat_correct").toLowerCase()} 🏆`;
   if(navigator.share){ navigator.share({title:"World Cup Predictor 2026",text:msg}).catch(()=>{}); }
   else{ window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank"); }
 };
