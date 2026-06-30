@@ -562,8 +562,7 @@ function resolveTeams(mid){
   const m=KO_BY_ID[mid]; if(!m) return {hT:null,aT:null};
   return {hT:resolveSlot(m.s[0]),aT:resolveSlot(m.s[1])};
 }
-// Group stage qualifiers (1st/2nd per group + relevant 3rd-place teams)
-// Sourced from actual final group standings.
+// Group stage qualifiers (1st/2nd per group) — from actual final standings.
 const GROUP_QUALIFIERS={
   A:{1:"México",          2:"Sudáfrica"},
   B:{1:"Suiza",           2:"Canadá"},
@@ -578,16 +577,26 @@ const GROUP_QUALIFIERS={
   K:{1:"Colombia",        2:"Portugal"},
   L:{1:"Inglaterra",      2:"Croacia"},
 };
-// Best 3rd-placed teams that advance (only these 8 groups feed a {third} slot)
+// IMPORTANT: these letters are bracket SLOT tags (which R32 match needs a 3rd-place
+// team), NOT the group the team actually finished 3rd in. Mapped 1:1 against the
+// official R32 bracket (CBS Sports), matched to our fixed internal match IDs:
+//   slot E -> Match 74 -> Paraguay (actual 3rd, Group D)
+//   slot I -> Match 77 -> Sweden   (actual 3rd, Group F)
+//   slot A -> Match 79 -> Ecuador  (actual 3rd, Group E)
+//   slot L -> Match 80 -> DR Congo (actual 3rd, Group K)
+//   slot D -> Match 81 -> Bosnia   (actual 3rd, Group B)
+//   slot G -> Match 82 -> Senegal  (actual 3rd, Group I)
+//   slot B -> Match 85 -> Algeria  (actual 3rd, Group J)
+//   slot K -> Match 87 -> Ghana    (actual 3rd, Group L)
 const THIRD_QUALIFIERS={
-  A:"Corea del Sur",
-  B:"Bosnia",
-  D:"Paraguay",
-  E:"Ecuador",
-  G:"Irán",
-  I:"Senegal",
-  K:"RD Congo",
-  L:"Ghana",
+  E:"Paraguay",
+  I:"Suecia",
+  A:"Ecuador",
+  L:"RD Congo",
+  D:"Bosnia",
+  G:"Senegal",
+  B:"Argelia",
+  K:"Ghana",
 };
 
 function resolveSlot(slot){
