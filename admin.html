@@ -197,9 +197,13 @@ document.addEventListener("DOMContentLoaded",()=>{
 async function launchAdmin(){
   onSnapshot(doc(db,"results","matches"),snap=>{
     const incoming=snap.exists()?snap.data():{};
-    const changed=Object.keys(incoming).filter(k=>JSON.stringify(incoming[k])!==JSON.stringify(workingResults[k]));
+    const changed=Object.keys(incoming).some(k=>JSON.stringify(incoming[k])!==JSON.stringify(workingResults[k]))
+      || Object.keys(workingResults).some(k=>!(k in incoming));
     workingResults=incoming;
-    changed.forEach(id=>refreshCard(parseInt(id,10)));
+    // Refresh ALL cards (not just the literally-changed match) because R16+
+    // cards display team names resolved from earlier matches' results — e.g.
+    // card #89 shows "Winner of #74", so a change to #74 must also re-render #89.
+    if(changed) buildAllCards();
     updateAutoStatus();
   });
   onSnapshot(collection(db,"players"),snap=>{
