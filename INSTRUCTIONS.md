@@ -47,8 +47,22 @@ football-data.org API (live scores)
 - No external JS files, no imports from local files
 - Firebase SDK version: `11.9.0` (do not upgrade without testing)
 - All tournament data (GROUPS, FLAG, CODE, KO, KICKOFF) is inlined in the `<script>` block
-- `localStorage` is used **only** to store the player's name (`qp26_user`)
+- `localStorage` is used to store the player's name (`qp26_user`) and language
+  preference (`qp26_lang`)
 - All other state (predictions, champion pick, results) lives in Firestore
+- **Bilingual (Spanish/English)**: teams are keyed by a language-neutral 3-letter
+  code (`GROUPS`, `TEAMS_ES`, `TEAMS_EN`, single `FLAG` map). `champion` picks in
+  Firestore now store a code (e.g. `"ARG"`) rather than a display name;
+  `migrateChampPick()` provides backward compatibility for any older saved picks
+  stored as a Spanish name. All UI copy lives in `STRINGS_ES` / `STRINGS_EN`,
+  applied via a `t(key)` helper and `data-i18n` attributes. Default language is
+  Spanish; toggle persists via `qp26_lang`. **`admin.html` is intentionally
+  Spanish-only — no bilingual support, by design (single admin user).**
+- `GROUP_QUALIFIERS` / `THIRD_QUALIFIERS`: since group-stage standings aren't
+  stored in Firestore, R32 matchups are resolved via hardcoded lookup tables
+  (group winner/runner-up per group, plus the 8 real third-place qualifiers per
+  bracket slot). These must be verified against the actual final group standings
+  before relying on them — see "Known Constraints" below.
 
 ### `admin.html` — Admin Panel
 - Same self-contained pattern as `index.html`
@@ -56,6 +70,14 @@ football-data.org API (live scores)
 - Admin PIN: stored as `const ADMIN_PIN` in the script block
 - Uses amber/green colour scheme to visually distinguish from the player app
 - Writes to Firestore with `autoFetched: false` to permanently lock manual results
+- Spanish-only (no language toggle) — single admin user, lower priority
+- **Live refresh**: the `results/matches` `onSnapshot` listener calls
+  `buildAllCards()` (full rebuild of all ~32 cards) whenever any match result
+  changes, not just a single-card `refreshCard(id)` call. This is required
+  because R16+ cards display team names resolved from earlier matches'
+  results (e.g. card #89 shows "Winner of #74"), so a change to match 74 must
+  also re-render card 89, not just card 74. `refreshCard(id)` still exists and
+  is used directly after a manual Publish/Clear action on that specific card.
 
 ### `functions/index.js` — Cloud Function
 - Scheduled: every 5 minutes
@@ -64,6 +86,17 @@ football-data.org API (live scores)
 - Respects `autoFetched: false` as a permanent manual override lock
 - Logs every run to `/fetchLog` collection
 - Rate limit safety: 7-second sleep between each of the 6 API stage calls
+- **Matches API fixtures to internal match IDs by team name, not date.** Several
+  R32/R16+ matches share a calendar date (e.g. R32 matches 74 and 76 both kick
+  off June 29), so date-only matching previously caused the function to silently
+  write the wrong match's score under the wrong internal ID. R32 (73–88) matches
+  by a static `R32_TEAMS` list of real fixtures; R16+ (89+) dynamically resolves
+  expected team names from already-known results via `resolveSlot()`/`KO_BRACKET`
+  (mirroring the same bracket-walking logic used in `index.html`), and only
+  matches by team name once those teams are known. If a match's home/away
+  orientation differs between our bracket and the API, this is detected and
+  corrected (`matchIdMap[id + "_flip"]`) so scores and penalty winners are never
+  reported backwards.
 
 ---
 
@@ -179,7 +212,7 @@ Match IDs must remain stable. Never renumber them. The Firestore results documen
 ```javascript
 {
   name: "Carlos",
-  champion: "Argentina",
+  champion: "ARG",  // team CODE, not display name (see Bilingual note below)
   predictions: {
     89: { h: 2, a: 1, pen: null },
     90: { h: 0, a: 0, pen: "a" },
@@ -190,6 +223,13 @@ Match IDs must remain stable. Never renumber them. The Firestore results documen
 ```
 - Slug is derived from the player's name: lowercase, spaces replaced with `_`, special chars removed
 - Predictions use the same structure as results (h, a, pen)
+- `champion` stores a language-neutral 3-letter team code (e.g. `"ARG"` for
+  Argentina), not a display name. Any pick saved before bilingual support was
+  added may still be stored as a Spanish name (e.g. `"Argentina"`) — `index.html`
+  handles this automatically via `migrateChampPick()` on load, converting old
+  names to codes in memory without needing a Firestore migration script. An
+  audit reading this field directly (bypassing the app) should account for both
+  possible formats.
 
 ### `/fetchLog` collection
 ```javascript
@@ -246,7 +286,10 @@ Match IDs must remain stable. Never renumber them. The Firestore results documen
 1. Admin uses `sessionStorage` for auth — do not switch to `localStorage`
 2. Always set `autoFetched: false` when publishing a manual result
 3. Keep the status bar and fetch log functional — they are the admin's primary monitoring tools
-4. The `refreshCard(id)` function rebuilds a single card in-place — use it after any Firestore write
+4. The live `onSnapshot` listener on `results/matches` calls `buildAllCards()`
+   (not a single-card refresh) whenever any result changes, since R16+ cards
+   depend on earlier matches' results. `refreshCard(id)` is still used directly
+   after a Publish/Clear action on that one card for immediate feedback.
 
 ### Updating the Cloud Function
 1. After any change to `functions/index.js`, redeploy with `firebase deploy --only functions`
@@ -287,6 +330,22 @@ Keeping results in a single flat document makes Firestore reads cheap (one read 
 **Why is the R32 read-only?**
 The app launched mid-tournament when R32 matches had already started. This was a deliberate design decision to let all players start on equal footing from R16 onwards.
 
+**Why does the Cloud Function match by team name instead of date?**
+Multiple R32/R16+ matches share the same calendar date (e.g. R32 matches 74 and
+76 both kick off June 29; several R16 dates also collide). Date-only matching
+caused the function to grab the wrong API fixture for a given internal match ID,
+silently writing one match's real score under a different match's slot. This
+was discovered and fixed after live matches 74, 75, and 76 received incorrect
+auto-fetched scores during the tournament — those three were manually corrected
+via Override & Publish in the admin panel. **An audit should confirm no other
+matches show a score that doesn't match the real-world result, particularly any
+that finished before this fix was deployed.**
+
+**Why is `index.html` bilingual but `admin.html` isn't?**
+The player app is shared with the whole DISIP group, some of whom are more
+comfortable in English; the admin panel has exactly one user (Carlos) who is
+bilingual, so the added complexity of a second admin language wasn't worth it.
+
 **Why Bebas Neue + Inter?**
 Bebas Neue gives the score numbers a strong, stadium scoreboard feel. Inter is the most legible system-style font for small text on mobile. Both are available on Google Fonts with no licensing cost.
 
@@ -319,4 +378,4 @@ The app must deploy as raw files to GitHub Pages with zero build step. Keeping i
 
 ---
 
-*Last updated: June 2026. Update this file whenever a significant architectural or design decision is made.*
+*Last updated: June 2026 (bilingual support, Cloud Function team-name matching fix, admin live-refresh fix). Update this file whenever a significant architectural or design decision is made.*

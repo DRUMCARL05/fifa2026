@@ -29,6 +29,7 @@ Built with vanilla HTML/CSS/JS, Firebase Firestore, and a Cloud Function that fe
 - **Match locking** — predictions disable automatically at kickoff time
 - **WhatsApp share** — one tap generates a pre-written score message
 - **Offline resilient** — shows a banner if connection drops, re-syncs automatically
+- **Bilingual** — Spanish/English toggle (team names, flags, and all UI copy); Spanish is the default, preference saved per device. Admin panel remains Spanish-only.
 
 ### Admin Panel (`admin.html`)
 - **PIN-protected** — session-based login, logs out when browser tab closes
@@ -45,10 +46,13 @@ Built with vanilla HTML/CSS/JS, Firebase Firestore, and a Cloud Function that fe
 ### Cloud Function (`functions/index.js`)
 - Runs every 5 minutes via Firebase Cloud Scheduler
 - Fetches finished match results from football-data.org API
-- Matches results to internal match IDs by date
+- Matches results to internal match IDs by **team name** (not date — several
+  matches share a calendar date, so date-only matching previously caused
+  mismatched results; see INSTRUCTIONS.md for details)
 - Writes to Firestore only if no manual override exists (`autoFetched: false` = permanent lock)
 - Logs every run to a `fetchLog` Firestore collection for admin visibility
-- Handles penalty winners from API data automatically
+- Handles penalty winners from API data automatically, correcting for any
+  home/away orientation mismatch between our bracket and the API
 
 ---
 
