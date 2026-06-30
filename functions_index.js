@@ -116,6 +116,37 @@ const KICKOFF = {
   103:"2026-07-18",104:"2026-07-19",
 };
 
+// Real R32 fixtures (home, away) in football-data.org's English team names.
+// This is the ground truth used to match API fixtures to our internal match IDs —
+// date alone is NOT reliable since several R32 matches share the same calendar date
+// (e.g. M74 and M76 both kick off 2026-06-29), which previously caused the Cloud
+// Function to silently mismatch fixtures and write the wrong team's score under
+// the wrong internal match ID.
+const R32_TEAMS = {
+  73: ["South Africa", "Canada"],
+  74: ["Germany", "Paraguay"],
+  75: ["Netherlands", "Morocco"],
+  76: ["Brazil", "Japan"],
+  77: ["France", "Sweden"],
+  78: ["Ivory Coast", "Norway"],
+  79: ["Mexico", "Ecuador"],
+  80: ["England", "DR Congo"],
+  81: ["USA", "Bosnia and Herzegovina"],
+  82: ["Belgium", "Senegal"],
+  83: ["Portugal", "Croatia"],
+  84: ["Spain", "Austria"],
+  85: ["Switzerland", "Algeria"],
+  86: ["Argentina", "Cabo Verde"],
+  87: ["Colombia", "Ghana"],
+  88: ["Australia", "Egypt"],
+};
+// Normalizes a team name for loose comparison (case/diacritics/whitespace insensitive)
+function normTeam(name) {
+  return String(name || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // strip accents
+    .toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 // Our KO bracket — used to resolve expected team names per slot
 // (simplified: we only need home/away for R32; later rounds resolved dynamically)
 const KO_SLOTS = {
@@ -173,18 +204,48 @@ exports.fetchResults = onSchedule(
         return;
       }
 
-      // 3. Build / update matchIdMap (our ID → their ID) using date+team matching
-      // Only do this for matches we haven't mapped yet
+      // 3. Build / update matchIdMap (our ID → their ID) using team-name matching.
+      // Only do this for matches we haven't mapped yet.
+      // IMPORTANT: date alone is not a reliable key (multiple R32 fixtures can share
+      // a calendar date), so for R32 (73-88) we match on actual team names via
+      // R32_TEAMS, and only fall back to date-only matching for later rounds
+      // (89+) where the participating teams aren't known in advance.
       const unmapped = Object.keys(KICKOFF).filter(id => !matchIdMap[id]);
       if (unmapped.length > 0) {
         for (const ourId of unmapped) {
+          const numOurId = parseInt(ourId, 10);
           const date = KICKOFF[ourId];
-          const apiMatch = allApiMatches.find(m => {
-            const apiDate = m.utcDate ? m.utcDate.substring(0, 10) : "";
-            return apiDate === date;
-          });
-          // For R32 matches we can also verify by team name
-          if (apiMatch) matchIdMap[ourId] = apiMatch.id;
+          let apiMatch = null;
+
+          if (R32_TEAMS[numOurId]) {
+            // R32: match by team names, not just date, to avoid same-day collisions
+            const [wantHome, wantAway] = R32_TEAMS[numOurId].map(normTeam);
+            apiMatch = allApiMatches.find(m => {
+              const apiHome = normTeam(m.homeTeam && m.homeTeam.name);
+              const apiAway = normTeam(m.awayTeam && m.awayTeam.name);
+              // Accept either orientation; we record whether it's flipped below
+              return (apiHome === wantHome && apiAway === wantAway) ||
+                     (apiHome === wantAway && apiAway === wantHome);
+            });
+            if (apiMatch) {
+              const apiHome = normTeam(apiMatch.homeTeam && apiMatch.homeTeam.name);
+              // Record whether the API's home/away is flipped relative to ours,
+              // so score extraction can correct for it later.
+              matchIdMap[ourId] = apiMatch.id;
+              matchIdMap[ourId + "_flip"] = (apiHome !== wantHome);
+            } else {
+              console.log(`Match ${ourId}: no team-name match found in API for ${R32_TEAMS[numOurId].join(" vs ")} on ${date}`);
+            }
+          } else {
+            // R16+ : teams aren't known ahead of time, fall back to date matching.
+            // Collisions are less likely here since rounds spread matches across days,
+            // but this remains a known weaker match — verify manually if uncertain.
+            apiMatch = allApiMatches.find(m => {
+              const apiDate = m.utcDate ? m.utcDate.substring(0, 10) : "";
+              return apiDate === date;
+            });
+            if (apiMatch) matchIdMap[ourId] = apiMatch.id;
+          }
         }
         // Persist the map so we don't recompute it
         await metaRef.set(matchIdMap, { merge: true });
@@ -221,15 +282,19 @@ exports.fetchResults = onSchedule(
         const ft = score.fullTime || score.regularTime;
         if (!ft || ft.home == null || ft.away == null) continue;
 
-        const h = ft.home;
-        const a = ft.away;
+        // Correct for home/away orientation mismatch between our bracket and the API,
+        // recorded as "<id>_flip" in matchIdMap during the matching step above.
+        const flipped = matchIdMap[ourId + "_flip"] === true;
+        const h = flipped ? ft.away : ft.home;
+        const a = flipped ? ft.home : ft.away;
 
         // Penalty winner — football-data.org uses score.penalties
         let pen = null;
         if (h === a) {
           const pkScore = score.penalties;
           if (pkScore && pkScore.home != null && pkScore.away != null) {
-            pen = pkScore.home > pkScore.away ? "h" : "a";
+            const penHomeWins = pkScore.home > pkScore.away;
+            pen = flipped ? (penHomeWins ? "a" : "h") : (penHomeWins ? "h" : "a");
           }
         }
 
