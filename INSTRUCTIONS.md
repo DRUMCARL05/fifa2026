@@ -292,10 +292,32 @@ Match IDs must remain stable. Never renumber them. The Firestore results documen
    after a Publish/Clear action on that one card for immediate feedback.
 
 ### Updating the Cloud Function
-1. After any change to `functions/index.js`, redeploy with `firebase deploy --only functions`
-2. Verify the function appears in Firebase Console → Functions after deploying
-3. Check Firebase Console → Functions → Logs within 10 minutes to confirm it ran successfully
-4. Do not change the schedule from "every 5 minutes" without updating rate limit sleep values
+
+⚠️ **IMPORTANT — Two separate locations must stay in sync:**
+
+The Firebase project and the GitHub repo live in **different folders on the local machine**. The Firebase CLI only reads from the Firebase project folder, not the GitHub repo. Always update both files to keep them in sync:
+
+| File | Location |
+|------|----------|
+| Source of truth (GitHub) | `~/Documents/GitHub/fifa2026/functions/index.js` |
+| Deployed by Firebase CLI | `~/functions/index.js` (inside the Firebase project folder where `firebase.json` lives) |
+
+**Correct deployment workflow:**
+```bash
+# 1. Edit the file in the GitHub repo first (source of truth)
+# 2. Copy it to the Firebase project folder
+cp ~/Documents/GitHub/fifa2026/functions/index.js ~/functions/index.js
+
+# 3. Deploy from the Firebase project folder (NOT the GitHub repo)
+cd ~
+firebase deploy --only functions
+```
+
+Running `firebase deploy --only functions` from inside `~/Documents/GitHub/fifa2026/` will NOT work — there is no `firebase.json` in that folder, so the CLI will either fail or silently skip deployment.
+
+4. Verify the function appears in Firebase Console → Functions with a new revision name after deploying
+5. Check Firebase Console → Functions → Logs within 10 minutes to confirm it ran successfully — look for "Updated matchIdMap" and "Wrote X result(s)" log lines
+6. Do not change the schedule from "every 5 minutes" without updating rate limit sleep values
 
 ### Changing the scoring system
 1. Update `scoreMatch()` in **both** `index.html` and `admin.html` — they must be identical
@@ -340,6 +362,17 @@ auto-fetched scores during the tournament — those three were manually correcte
 via Override & Publish in the admin panel. **An audit should confirm no other
 matches show a score that doesn't match the real-world result, particularly any
 that finished before this fix was deployed.**
+
+The `R32_TEAMS` list in `functions/index.js` uses the **exact team name strings
+that football-data.org's API returns** — verified by querying the API directly.
+Several names differ from what you might expect:
+- `"Congo DR"` (not "DR Congo")
+- `"United States"` (not "USA")
+- `"Bosnia-Herzegovina"` (not "Bosnia and Herzegovina")
+- `"Cape Verde Islands"` (not "Cabo Verde")
+- `"Ivory Coast"` (correct — API does use the English name)
+
+Do not change these strings without re-verifying against the live API response.
 
 **Why is `index.html` bilingual but `admin.html` isn't?**
 The player app is shared with the whole DISIP group, some of whom are more
@@ -453,4 +486,4 @@ stakes for a friend group; worth knowing if this ever needs hardening.
 
 ---
 
-*Last updated: June 2026 (bilingual support, Cloud Function team-name matching fix, admin live-refresh fix, Firestore rules tightened from open test-mode to scoped per-collection rules). Update this file whenever a significant architectural or design decision is made.*
+*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo). Update this file whenever a significant architectural or design decision is made.*
