@@ -71,6 +71,18 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
 .round-panel{display:none}.round-panel.on{display:block}
 
 /* CHAMPION CARD */
+/* TODAY HIGHLIGHT */
+.today-card{background:linear-gradient(135deg,#0f2a2e,var(--panel2));border:1.5px solid var(--teal2);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:1.2rem}
+.today-label{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:.6rem}
+.today-match{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.5rem 0;border-top:1px solid var(--line)}
+.today-match:first-of-type{border-top:none;padding-top:0}
+.today-teams{display:flex;align-items:center;gap:.4rem;font-weight:700;font-size:.9rem;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-teams .team-flag{font-size:1.3rem}
+.today-meta{text-align:right;flex-shrink:0}
+.today-time{font-family:var(--display);font-size:1.1rem;color:var(--teal);line-height:1}
+.today-city{font-size:.66rem;color:var(--muted);margin-top:.1rem}
+.today-empty{color:var(--muted);font-size:.85rem;text-align:center;padding:.3rem 0}
+
 .champ-card{background:linear-gradient(135deg,#1c2e14,var(--panel2));border:2px solid var(--gold);border-radius:var(--r);padding:1.1rem;margin-bottom:1.2rem;position:relative;overflow:hidden}
 .champ-card::after{content:"🏆";position:absolute;right:-4px;bottom:-12px;font-size:5rem;opacity:.1;pointer-events:none}
 .champ-label{font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:.25rem}
@@ -239,6 +251,8 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
   <main>
     <!-- PREDICT TAB -->
     <div id="tab-predict" class="tab on">
+      <div id="today-highlight"></div>
+
       <div class="champ-card">
         <div class="champ-label" data-i18n="star_pred">⭐ Star Prediction</div>
         <div class="champ-title" data-i18n="who_lifts">Who lifts the trophy?</div>
@@ -484,6 +498,43 @@ const KICKOFF={
   103:"2026-07-18T19:00:00Z",104:"2026-07-19T19:00:00Z"
 };
 const KO_APPROX=new Set([97,98,99,100,101,102,103,104]);
+// Host city per match, keyed by the real FIFA 2026 match number (our match IDs
+// mirror FIFA's official numbering for these rounds). Sourced from FIFA's
+// published knockout schedule — not user data, purely informational.
+const VENUE_ES={
+  73:"Los Ángeles",74:"Boston",75:"Monterrey",76:"Houston",
+  77:"Nueva York",78:"Dallas",79:"Ciudad de México",80:"Atlanta",
+  81:"San Francisco",82:"Seattle",83:"Toronto",84:"Los Ángeles",
+  85:"Vancouver",86:"Miami",87:"Kansas City",88:"Dallas",
+  89:"Filadelfia",90:"Houston",91:"Nueva York",92:"Ciudad de México",
+  93:"Dallas",94:"Seattle",95:"Atlanta",96:"Vancouver",
+  97:"Boston",98:"Los Ángeles",99:"Miami",100:"Kansas City",
+  101:"Dallas",102:"Atlanta",103:"Miami",104:"Nueva York",
+};
+const VENUE_EN={
+  73:"Los Angeles",74:"Boston",75:"Monterrey",76:"Houston",
+  77:"New York",78:"Dallas",79:"Mexico City",80:"Atlanta",
+  81:"San Francisco",82:"Seattle",83:"Toronto",84:"Los Angeles",
+  85:"Vancouver",86:"Miami",87:"Kansas City",88:"Dallas",
+  89:"Philadelphia",90:"Houston",91:"New York",92:"Mexico City",
+  93:"Dallas",94:"Seattle",95:"Atlanta",96:"Vancouver",
+  97:"Boston",98:"Los Angeles",99:"Miami",100:"Kansas City",
+  101:"Dallas",102:"Atlanta",103:"Miami",104:"New York",
+};
+function venueName(id){ const table = lang==="en"?VENUE_EN:VENUE_ES; return table[id]||""; }
+// Host venue's IANA timezone per match — this is what makes "today" mean the
+// tournament day at the match's own city, regardless of the viewer's timezone
+// or UTC. Derived from the same venue assignments as VENUE_ES/VENUE_EN above.
+const VENUE_TZ={
+  73:"America/Los_Angeles",74:"America/New_York",75:"America/Monterrey",76:"America/Chicago",
+  77:"America/New_York",78:"America/Chicago",79:"America/Mexico_City",80:"America/New_York",
+  81:"America/Los_Angeles",82:"America/Los_Angeles",83:"America/Toronto",84:"America/Los_Angeles",
+  85:"America/Vancouver",86:"America/New_York",87:"America/Chicago",88:"America/Chicago",
+  89:"America/New_York",90:"America/Chicago",91:"America/New_York",92:"America/Mexico_City",
+  93:"America/Chicago",94:"America/Los_Angeles",95:"America/New_York",96:"America/Vancouver",
+  97:"America/New_York",98:"America/Los_Angeles",99:"America/New_York",100:"America/Chicago",
+  101:"America/Chicago",102:"America/New_York",103:"America/New_York",104:"America/New_York",
+};
 const ROUND_MULT={R16:1,QF:2,SF:3,"3P":1,F:4};
 const CHAMP_LOCK=new Date("2026-07-04T17:00:00Z");
 const LS_USER="qp26_user";
@@ -552,6 +603,8 @@ const STRINGS_ES={
   toast_saved:"Guardado ✓",
   toast_saved_local:"Guardado localmente — se sincronizará al volver la conexión",
   match_tbc:"equipos por confirmar",
+  today_title:"Partidos de hoy",
+  today_no_matches:"No hay partidos hoy",
 };
 const STRINGS_EN={
   champ_choose:"— Choose the tournament winner —",
@@ -613,6 +666,8 @@ const STRINGS_EN={
   toast_saved:"Saved ✓",
   toast_saved_local:"Saved locally — will sync when online",
   match_tbc:"teams TBC",
+  today_title:"Today's Matches",
+  today_no_matches:"No matches today",
 };
 const ROUND_LABEL_KEY={R16:"round_r16",QF:"round_qf",SF:"round_sf","3P":"round_3p",F:"round_f"};
 
@@ -697,6 +752,7 @@ async function boot(){
       buildAllRounds();
       buildR32Tab();
       buildBracket();
+      buildTodayHighlight();
       if(document.getElementById("tab-standings").classList.contains("on")) renderStandings();
     }
   });
@@ -714,6 +770,7 @@ async function boot(){
   buildAllRounds();
   buildR32Tab();
   buildBracket();
+  buildTodayHighlight();
   updateProgress();
   applyTranslations();
 }
@@ -739,6 +796,7 @@ function applyTranslations(){
     buildChampSelect();
     buildAllRounds();
     buildR32Tab();
+    buildTodayHighlight();
     if(document.getElementById("tab-standings").classList.contains("on")) renderStandings();
   }
 }
@@ -1139,6 +1197,39 @@ const BRACKET_COLUMNS=[
   {ids:[99,100], mirror:true},
   {ids:[91,92,95,96], mirror:true},
 ];
+/* ═══════════════════════════════════════════════
+   TODAY HIGHLIGHT
+═══════════════════════════════════════════════ */
+function isSameLocalDay(iso, tz){
+  const fmt=d=>new Intl.DateTimeFormat("en-CA",{timeZone:tz,year:"numeric",month:"2-digit",day:"2-digit"}).format(d);
+  return fmt(new Date(iso))===fmt(new Date());
+}
+function buildTodayHighlight(){
+  const el=document.getElementById("today-highlight");
+  if(!el) return;
+  const todays=KO.filter(m=>KICKOFF[m.id] && isSameLocalDay(KICKOFF[m.id], VENUE_TZ[m.id]||"UTC"))
+                 .sort((a,b)=>Date.parse(KICKOFF[a.id])-Date.parse(KICKOFF[b.id]));
+  if(todays.length===0){
+    el.innerHTML=`<div class="today-card"><div class="today-label">${esc(t("today_title"))}</div><div class="today-empty">${esc(t("today_no_matches"))}</div></div>`;
+    return;
+  }
+  const rows=todays.map(m=>{
+    const res=liveResults[m.id];
+    const hCode=resolveSlot(m.s[0]), aCode=resolveSlot(m.s[1]);
+    const hDisp=hCode?teamName(hCode):labelSlot(m.s[0]);
+    const aDisp=aCode?teamName(aCode):labelSlot(m.s[1]);
+    const hFlag=hCode&&FLAG[hCode]?FLAG[hCode]:"🏳";
+    const aFlag=aCode&&FLAG[aCode]?FLAG[aCode]:"🏳";
+    const timeStr=new Intl.DateTimeFormat(undefined,{hour:"numeric",minute:"2-digit"}).format(new Date(KICKOFF[m.id]));
+    const scoreStr=(res&&res.h!=null)?` <b>${res.h}-${res.a}</b>`:"";
+    return `<div class="today-match">
+      <div class="today-teams">${hFlag} ${esc(hDisp)} vs ${aFlag} ${esc(aDisp)}${scoreStr}</div>
+      <div class="today-meta"><div class="today-time">${timeStr}</div><div class="today-city">${esc(venueName(m.id))}</div></div>
+    </div>`;
+  }).join("");
+  el.innerHTML=`<div class="today-card"><div class="today-label">${esc(t("today_title"))}</div>${rows}</div>`;
+}
+
 function buildBracket(){
   const el=document.getElementById("bracket-view");
   if(!el) return;

@@ -80,6 +80,30 @@ football-data.org API (live scores)
   `onSnapshot` listener as `buildR32Tab()` (both initial `boot()` render and
   live updates). Purely additive: no new Firestore fields, no changes to
   scoring, predictions, or `buildR32Tab()`.
+- **Today's Matches highlight (Predict tab)**: `#today-highlight` container
+  above the champion card, rendered by `buildTodayHighlight()`. Shows every
+  match whose **tournament day** is "today" — critically, "tournament day" is
+  the calendar date at the **match's own host venue**, not the viewer's
+  timezone and not UTC (these three can disagree — e.g. Match 92 kicks off
+  `2026-07-06T00:00:00Z`, which is UTC July 6 but local July 5 in Mexico
+  City; the venue date is the one that counts). This is computed via
+  `isSameLocalDay(iso, tz)` using `Intl.DateTimeFormat` with each match's
+  `VENUE_TZ` entry — never derive "today" from `new Date().getDate()` or a
+  UTC slice, both are wrong here. The kickoff **time displayed** is
+  deliberately the opposite: the viewer's own local time (no `timeZone`
+  override), since that's what tells them when to tune in — city name is
+  shown alongside so it's clear it's not their own time zone. `VENUE_ES` /
+  `VENUE_EN` / `VENUE_TZ` are new hardcoded per-match-ID lookups (same
+  pattern as `KICKOFF`/`GROUP_QUALIFIERS`), sourced from FIFA's official
+  schedule since our match IDs mirror FIFA's real match numbering for these
+  rounds — not user data, purely informational, all 32 IDs (73–104) covered
+  in all three maps. Shows "no matches today" when empty (translated).
+  Hooked into all three places that already rebuild dynamic content:
+  initial `boot()`, the `results/matches` `onSnapshot` listener, and
+  `applyTranslations()` (unlike the bracket, this has translated text — city
+  names and team labels — so it must re-render on language toggle too).
+  Purely additive: no new Firestore fields, no changes to scoring or
+  predictions.
 - `GROUP_QUALIFIERS` / `THIRD_QUALIFIERS`: since group-stage standings aren't
   stored in Firestore, R32 matchups are resolved via hardcoded lookup tables
   (group winner/runner-up per group, plus the 8 real third-place qualifiers per
@@ -508,4 +532,4 @@ stakes for a friend group; worth knowing if this ever needs hardening.
 
 ---
 
-*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added and reworked into a two-sided mirrored layout with Final styling, R32 tab renamed to Cuadro/Bracket). Update this file whenever a significant architectural or design decision is made.*
+*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added and reworked into a two-sided mirrored layout with Final styling, R32 tab renamed to Cuadro/Bracket, Today's Matches highlight added to Predict tab with venue-timezone-based day logic). Update this file whenever a significant architectural or design decision is made.*
