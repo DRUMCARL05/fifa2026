@@ -168,12 +168,19 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
 
 /* BRACKET */
 .bracket-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:1.2rem;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:1rem .5rem}
-.bracket-scroll{display:flex;gap:0;min-width:max-content;padding:.5rem}
+.bracket-scroll{display:flex;align-items:center;gap:0;min-width:max-content;padding:.5rem}
 .bracket-round{display:flex;flex-direction:column;justify-content:space-around}
-.bracket-round:not(:last-child) .bracket-match::after{content:"";position:absolute;top:50%;right:0;width:20px;height:1px;background:var(--muted);opacity:.6}
-.bracket-match{display:flex;flex-direction:column;gap:3px;position:relative;padding-right:20px}
+.bracket-match{display:flex;flex-direction:column;gap:3px;position:relative}
+.bracket-round:not(.mirror):not(.final-col) .bracket-match{padding-right:20px}
+.bracket-round:not(.mirror):not(.final-col) .bracket-match::after{content:"";position:absolute;top:50%;right:0;width:20px;height:1px;background:var(--muted);opacity:.6}
+.bracket-round.mirror .bracket-match{padding-left:20px}
+.bracket-round.mirror .bracket-match::before{content:"";position:absolute;top:50%;left:0;width:20px;height:1px;background:var(--muted);opacity:.6}
 .bracket-slot{width:26px;height:26px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.95rem}
 .bracket-slot.tbd{opacity:.35;font-size:.8rem}
+.bracket-round.final-col{padding:0 6px}
+.bracket-match.final{gap:6px;padding:.4rem;background:linear-gradient(135deg,#1c2e14,var(--panel2));border:2px solid var(--gold);border-radius:10px;box-shadow:0 0 12px rgba(245,158,11,.3)}
+.bracket-match.final .bracket-slot{width:40px;height:40px;font-size:1.5rem;background:transparent;border:none}
+.bracket-final-label{text-align:center;font-size:1.1rem;margin-bottom:.3rem}
 
 /* R32 TAB */
 .r32-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:.82rem 1rem;margin-bottom:.65rem;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.4rem}
@@ -1123,23 +1130,35 @@ function renderStandings(){
 /* ═══════════════════════════════════════════════
    BRACKET
 ═══════════════════════════════════════════════ */
-const BRACKET_ROUNDS=["R16","QF","SF","F"];
+const BRACKET_COLUMNS=[
+  {ids:[89,90,93,94]},
+  {ids:[97,98]},
+  {ids:[101]},
+  {ids:[104], final:true},
+  {ids:[102], mirror:true},
+  {ids:[99,100], mirror:true},
+  {ids:[91,92,95,96], mirror:true},
+];
 function buildBracket(){
   const el=document.getElementById("bracket-view");
   if(!el) return;
-  const rowH=60; // px per R32 match row — tune this to adjust bracket density
-  const colH=KO.filter(m=>m.r==="R16").length*rowH;
-  el.innerHTML=BRACKET_ROUNDS.map(r=>{
-    const matches=KO.filter(m=>m.r===r);
-    return `<div class="bracket-round" style="height:${colH}px">${matches.map(m=>{
+  const rowH=60; // px per R16-half match row — tune this to adjust bracket density
+  const colH=4*rowH; // 4 = matches per side in R16 (8 total, split L/R)
+  el.innerHTML=BRACKET_COLUMNS.map(col=>{
+    const cls="bracket-round"+(col.mirror?" mirror":"")+(col.final?" final-col":"");
+    const matchesHtml=col.ids.map(id=>{
+      const m=KO_BY_ID[id];
       const hCode=resolveSlot(m.s[0]), aCode=resolveSlot(m.s[1]);
       const hFlag=hCode?(FLAG[hCode]||"🏳"):"❔";
       const aFlag=aCode?(FLAG[aCode]||"🏳"):"❔";
-      return `<div class="bracket-match">
+      const matchCls="bracket-match"+(col.final?" final":"");
+      const label=col.final?`<div class="bracket-final-label">🏆</div>`:"";
+      return `${label}<div class="${matchCls}">
         <div class="bracket-slot ${!hCode?"tbd":""}">${hFlag}</div>
         <div class="bracket-slot ${!aCode?"tbd":""}">${aFlag}</div>
       </div>`;
-    }).join("")}</div>`;
+    }).join("");
+    return `<div class="${cls}" style="height:${colH}px">${matchesHtml}</div>`;
   }).join("");
 }
 
