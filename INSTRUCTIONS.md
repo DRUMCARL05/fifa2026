@@ -59,16 +59,19 @@ football-data.org API (live scores)
   Spanish; toggle persists via `qp26_lang`. **`admin.html` is intentionally
   Spanish-only — no bilingual support, by design (single admin user).**
 - **Visual bracket (R32 tab)**: `bracket-view` container renders a flags-only,
-  auto-updating knockout bracket (R32 → Final, no 3rd place) via
-  `buildBracket()`, reusing the existing `KO` array, `resolveSlot()`, and
-  `FLAG` map — no new data model. Unresolved slots show a ❔ placeholder so the
-  bracket shape is always visible. Hooked into the same `results/matches`
+  auto-updating knockout bracket (R16 → Final — R32 excluded by design, no 3rd
+  place) via `buildBracket()`, reusing the existing `KO` array, `resolveSlot()`,
+  and `FLAG` map — no new data model. Unresolved slots show a ❔ placeholder so
+  the bracket shape is always visible. Hooked into the same `results/matches`
   `onSnapshot` listener as `buildR32Tab()` (both initial `boot()` render and
   live updates). Purely additive: no new Firestore fields, no changes to
   scoring, predictions, or `buildR32Tab()`. Layout uses a CSS flexbox
-  `space-around` trick (fixed `1250px` height per round column) to align
-  match pairs to their next-round slot without JS geometry — not translated,
-  since it has no text.
+  `space-around` trick to align match pairs to their next-round slot without
+  JS geometry; column height is computed in JS from the R16 match count
+  (`rowH=60` per row, tunable) rather than hardcoded, and the connector line
+  fully spans the gap between rounds (zero flex-gap, spacing done via
+  `padding-right` on `.bracket-match` so the line touches both columns). Not
+  translated, since it has no text.
 - `GROUP_QUALIFIERS` / `THIRD_QUALIFIERS`: since group-stage standings aren't
   stored in Firestore, R32 matchups are resolved via hardcoded lookup tables
   (group winner/runner-up per group, plus the 8 real third-place qualifiers per
