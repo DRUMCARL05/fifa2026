@@ -58,20 +58,28 @@ football-data.org API (live scores)
   applied via a `t(key)` helper and `data-i18n` attributes. Default language is
   Spanish; toggle persists via `qp26_lang`. **`admin.html` is intentionally
   Spanish-only — no bilingual support, by design (single admin user).**
-- **Visual bracket (R32 tab)**: `bracket-view` container renders a flags-only,
-  auto-updating knockout bracket (R16 → Final — R32 excluded by design, no 3rd
-  place) via `buildBracket()`, reusing the existing `KO` array, `resolveSlot()`,
-  and `FLAG` map — no new data model. Unresolved slots show a ❔ placeholder so
-  the bracket shape is always visible. Hooked into the same `results/matches`
+- **Visual bracket ("Cuadro"/"Bracket" tab, id `tab-r32`/`nav-r32` unchanged
+  internally — only the display label was renamed from "R32" since the tab now
+  shows the full tournament tree, not just Round of 32)**: `bracket-view`
+  container renders a flags-only, auto-updating, **two-sided mirrored**
+  knockout bracket via `buildBracket()`, reusing the existing `KO_BY_ID`,
+  `resolveSlot()`, and `FLAG` map — no new data model. Structure is explicit
+  `BRACKET_COLUMNS` (not a round-wide filter), split on the real feeder
+  structure: left side = R16 89,90,93,94 → QF 97,98 → SF 101; right side =
+  R16 91,92,95,96 → QF 99,100 → SF 102; Final (104) centered between them with
+  gold-border/bigger-flag styling (`.bracket-match.final`) and a 🏆 icon —
+  the rest of the bracket stays flags-only, no text (so it's untranslated).
+  Right-side columns get class `mirror`, which flips the connector line to
+  `::before` (pointing left into center) instead of `::after` (pointing
+  right); each round's line fully spans the gap between columns (zero
+  flex-gap, spacing via `padding-left`/`padding-right` on `.bracket-match`).
+  Column height is computed in JS from the per-side R16 count (4 matches ×
+  `rowH=60`, tunable) via CSS flexbox `space-around`, which is what keeps
+  match pairs aligned to their next-round slot without JS geometry.
+  Unresolved slots show ❔. Hooked into the same `results/matches`
   `onSnapshot` listener as `buildR32Tab()` (both initial `boot()` render and
   live updates). Purely additive: no new Firestore fields, no changes to
-  scoring, predictions, or `buildR32Tab()`. Layout uses a CSS flexbox
-  `space-around` trick to align match pairs to their next-round slot without
-  JS geometry; column height is computed in JS from the R16 match count
-  (`rowH=60` per row, tunable) rather than hardcoded, and the connector line
-  fully spans the gap between rounds (zero flex-gap, spacing done via
-  `padding-right` on `.bracket-match` so the line touches both columns). Not
-  translated, since it has no text.
+  scoring, predictions, or `buildR32Tab()`.
 - `GROUP_QUALIFIERS` / `THIRD_QUALIFIERS`: since group-stage standings aren't
   stored in Firestore, R32 matchups are resolved via hardcoded lookup tables
   (group winner/runner-up per group, plus the 8 real third-place qualifiers per
@@ -500,4 +508,4 @@ stakes for a friend group; worth knowing if this ever needs hardening.
 
 ---
 
-*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added to R32 tab). Update this file whenever a significant architectural or design decision is made.*
+*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added and reworked into a two-sided mirrored layout with Final styling, R32 tab renamed to Cuadro/Bracket). Update this file whenever a significant architectural or design decision is made.*
