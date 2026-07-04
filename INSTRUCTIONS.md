@@ -58,6 +58,17 @@ football-data.org API (live scores)
   applied via a `t(key)` helper and `data-i18n` attributes. Default language is
   Spanish; toggle persists via `qp26_lang`. **`admin.html` is intentionally
   Spanish-only — no bilingual support, by design (single admin user).**
+- **Visual bracket (R32 tab)**: `bracket-view` container renders a flags-only,
+  auto-updating knockout bracket (R32 → Final, no 3rd place) via
+  `buildBracket()`, reusing the existing `KO` array, `resolveSlot()`, and
+  `FLAG` map — no new data model. Unresolved slots show a ❔ placeholder so the
+  bracket shape is always visible. Hooked into the same `results/matches`
+  `onSnapshot` listener as `buildR32Tab()` (both initial `boot()` render and
+  live updates). Purely additive: no new Firestore fields, no changes to
+  scoring, predictions, or `buildR32Tab()`. Layout uses a CSS flexbox
+  `space-around` trick (fixed `1250px` height per round column) to align
+  match pairs to their next-round slot without JS geometry — not translated,
+  since it has no text.
 - `GROUP_QUALIFIERS` / `THIRD_QUALIFIERS`: since group-stage standings aren't
   stored in Firestore, R32 matchups are resolved via hardcoded lookup tables
   (group winner/runner-up per group, plus the 8 real third-place qualifiers per
@@ -486,4 +497,4 @@ stakes for a friend group; worth knowing if this ever needs hardening.
 
 ---
 
-*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo). Update this file whenever a significant architectural or design decision is made.*
+*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added to R32 tab). Update this file whenever a significant architectural or design decision is made.*
