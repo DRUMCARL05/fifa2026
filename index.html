@@ -1030,6 +1030,12 @@ function buildMatchCard(m){
 ═══════════════════════════════════════════════ */
 window.step=function(id,side,delta){
   if(!predictions[id]) predictions[id]={h:null,a:null,pen:null};
+  const other = side==="h" ? "a" : "h";
+  if(predictions[id][other]==null){
+    predictions[id][other]=0;
+    const otherEl=document.getElementById(`sv-${id}-${other}`);
+    if(otherEl) otherEl.textContent=0;
+  }
   const cur=predictions[id][side]!=null?predictions[id][side]:0;
   predictions[id][side]=Math.max(0,cur+delta);
   const el=document.getElementById(`sv-${id}-${side}`);
