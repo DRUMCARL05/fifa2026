@@ -293,6 +293,7 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
         <div style="font-size:.8rem;color:var(--muted);line-height:1.5" data-i18n="r32_sub">Results shown for reference. Predictions open from Round of 16.</div>
       </div>
       <div id="r32-list"></div>
+      <div id="extra-rounds-list"></div>
     </div>
 
     <!-- STANDINGS TAB -->
@@ -493,9 +494,9 @@ const KICKOFF={
   88:"2026-07-03T18:00:00Z",89:"2026-07-04T21:00:00Z",90:"2026-07-04T17:00:00Z",
   91:"2026-07-05T20:00:00Z",92:"2026-07-06T00:00:00Z",93:"2026-07-06T19:00:00Z",
   94:"2026-07-07T00:00:00Z",95:"2026-07-07T16:00:00Z",96:"2026-07-07T20:00:00Z",
-  97:"2026-07-09T20:00:00Z",98:"2026-07-10T19:00:00Z",99:"2026-07-11T19:00:00Z",
-  100:"2026-07-11T23:00:00Z",101:"2026-07-14T19:00:00Z",102:"2026-07-15T19:00:00Z",
-  103:"2026-07-18T19:00:00Z",104:"2026-07-19T19:00:00Z"
+  97:"2026-07-09T20:00:00Z",98:"2026-07-10T19:00:00Z",99:"2026-07-11T21:00:00Z",
+  100:"2026-07-12T01:00:00Z",101:"2026-07-14T19:00:00Z",102:"2026-07-15T19:00:00Z",
+  103:"2026-07-18T21:00:00Z",104:"2026-07-19T19:00:00Z"
 };
 const KO_APPROX=new Set([97,98,99,100,101,102,103,104]);
 // Host city per match, keyed by the real FIFA 2026 match number (our match IDs
@@ -751,6 +752,7 @@ async function boot(){
     if(document.getElementById("app").style.display!=="none"){
       buildAllRounds();
       buildR32Tab();
+      buildExtraRounds();
       buildBracket();
       buildTodayHighlight();
       if(document.getElementById("tab-standings").classList.contains("on")) renderStandings();
@@ -769,6 +771,7 @@ async function boot(){
   buildChampSelect();
   buildAllRounds();
   buildR32Tab();
+  buildExtraRounds();
   buildBracket();
   buildTodayHighlight();
   updateProgress();
@@ -796,6 +799,7 @@ function applyTranslations(){
     buildChampSelect();
     buildAllRounds();
     buildR32Tab();
+    buildExtraRounds();
     buildTodayHighlight();
     if(document.getElementById("tab-standings").classList.contains("on")) renderStandings();
   }
@@ -1256,6 +1260,37 @@ function buildBracket(){
 /* ═══════════════════════════════════════════════
    R32 TAB
 ═══════════════════════════════════════════════ */
+function matchCardHtml(m){
+  const res=liveResults[m.id];
+  const kick=fmtKick(m.id);
+  const hCode=resolveSlot(m.s[0]), aCode=resolveSlot(m.s[1]);
+  const hDisp=hCode?teamName(hCode):labelSlot(m.s[0]);
+  const aDisp=aCode?teamName(aCode):labelSlot(m.s[1]);
+  const hLabel=`${hCode&&FLAG[hCode]?FLAG[hCode]+" ":""}${esc(hDisp)}`;
+  const aLabel=`${aCode&&FLAG[aCode]?FLAG[aCode]+" ":""}${esc(aDisp)}`;
+  const pending=!res||res.h==null;
+  const scoreStr=pending?(hasStarted(m.id)?t("tbc"):t("vs")):`${res.h}–${res.a}${res.pen?" ("+res.pen.toUpperCase()+"PKs)":""}`;
+  return `<div class="r32-card ${pending?"r32-pending":""}">
+    <div class="r32-date">${kick} · #${m.id}</div>
+    <div class="r32-home">${hLabel}</div>
+    <div class="r32-score">${scoreStr}</div>
+    <div class="r32-away">${aLabel}</div>
+  </div>`;
+}
+function buildExtraRounds(){
+  const el=document.getElementById("extra-rounds-list");
+  if(!el) return;
+  const rounds=["R16","QF","SF","3P","F"];
+  el.innerHTML=rounds.map(r=>{
+    const matches=KO.filter(m=>m.r===r);
+    if(!matches.some(m=>hasStarted(m.id))) return ""; // reveals itself once the round begins
+    const title=esc(t(ROUND_LABEL_KEY[r]));
+    return `<div style="margin:1.4rem 0 1rem">
+      <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px">${title}</div>
+    </div>${matches.map(matchCardHtml).join("")}`;
+  }).join("");
+}
+
 function buildR32Tab(){
   const r32=KO.filter(m=>m.r==="R32");
   document.getElementById("r32-list").innerHTML=r32.map(m=>{
