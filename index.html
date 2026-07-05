@@ -187,11 +187,14 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
 .bracket-round:not(.mirror):not(.final-col) .bracket-match::after{content:"";position:absolute;top:50%;right:0;width:20px;height:1px;background:var(--muted);opacity:.6}
 .bracket-round.mirror .bracket-match{padding-left:20px}
 .bracket-round.mirror .bracket-match::before{content:"";position:absolute;top:50%;left:0;width:20px;height:1px;background:var(--muted);opacity:.6}
-.bracket-slot{width:26px;height:26px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.95rem}
+.bracket-slot{width:26px;height:26px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.95rem;position:relative}
+.bracket-slot.winner{border-color:var(--gold);box-shadow:0 0 4px rgba(245,158,11,.5)}
+.bracket-score{position:absolute;bottom:-5px;right:-5px;min-width:13px;height:13px;padding:0 2px;border-radius:50%;background:var(--gold);color:#1a1200;font-size:.55rem;font-weight:700;line-height:13px;text-align:center;border:1px solid var(--panel)}
 .bracket-slot.tbd{opacity:.35;font-size:.8rem}
 .bracket-round.final-col{padding:0 6px}
 .bracket-match.final{gap:6px;padding:.4rem;background:linear-gradient(135deg,#1c2e14,var(--panel2));border:2px solid var(--gold);border-radius:10px;box-shadow:0 0 12px rgba(245,158,11,.3)}
 .bracket-match.final .bracket-slot{width:40px;height:40px;font-size:1.5rem;background:transparent;border:none}
+.bracket-match.final .bracket-slot.winner{border:2px solid var(--gold);box-shadow:0 0 6px rgba(245,158,11,.6)}
 .bracket-final-label{text-align:center;font-size:1.1rem;margin-bottom:.3rem}
 
 /* R32 TAB */
@@ -1235,14 +1238,19 @@ function buildBracket(){
     const cls="bracket-round"+(col.mirror?" mirror":"")+(col.final?" final-col":"");
     const matchesHtml=col.ids.map(id=>{
       const m=KO_BY_ID[id];
+      const res=liveResults[id];
+      const decided=res&&res.h!=null;
       const hCode=resolveSlot(m.s[0]), aCode=resolveSlot(m.s[1]);
       const hFlag=hCode?(FLAG[hCode]||"🏳"):"❔";
       const aFlag=aCode?(FLAG[aCode]||"🏳"):"❔";
+      const hWin=decided&&res.h>res.a, aWin=decided&&res.a>res.h;
+      const hScore=decided?`<div class="bracket-score">${res.h}</div>`:"";
+      const aScore=decided?`<div class="bracket-score">${res.a}</div>`:"";
       const matchCls="bracket-match"+(col.final?" final":"");
       const label=col.final?`<div class="bracket-final-label">🏆</div>`:"";
       return `${label}<div class="${matchCls}">
-        <div class="bracket-slot ${!hCode?"tbd":""}">${hFlag}</div>
-        <div class="bracket-slot ${!aCode?"tbd":""}">${aFlag}</div>
+        <div class="bracket-slot ${!hCode?"tbd":""}${hWin?" winner":""}">${hFlag}${hScore}</div>
+        <div class="bracket-slot ${!aCode?"tbd":""}${aWin?" winner":""}">${aFlag}${aScore}</div>
       </div>`;
     }).join("");
     return `<div class="${cls}" style="height:${colH}px">${matchesHtml}</div>`;
