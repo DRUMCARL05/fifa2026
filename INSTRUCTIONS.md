@@ -77,9 +77,21 @@ football-data.org API (live scores)
   `rowH=60`, tunable) via CSS flexbox `space-around`, which is what keeps
   match pairs aligned to their next-round slot without JS geometry.
   Unresolved slots show ❔. Hooked into the same `results/matches`
-  `onSnapshot` listener as `buildR32Tab()` (both initial `boot()` render and
-  live updates). Purely additive: no new Firestore fields, no changes to
-  scoring, predictions, or `buildR32Tab()`.
+  `onSnapshot` listener as `buildRoundsList()` (both initial `boot()` render
+  and live updates). Purely additive: no new Firestore fields, no changes to
+  scoring or predictions.
+- **Results list, auto-ordered by recency (Bracket tab, below the bracket
+  graphic)**: `#rounds-list` container, rendered by `buildRoundsList()` —
+  this **replaced and consolidated** the old separate `buildR32Tab()` +
+  `buildExtraRounds()` / `#r32-list` + `#extra-rounds-list`, which no longer
+  exist. Every round (R32 through Final) reveals itself automatically once
+  its first match kicks off (same `hasStarted()` check used elsewhere), and
+  sections are sorted by **most-recently-started round first** — R32 was
+  manually reordered below R16 once, but that's no longer needed: as QF, SF,
+  3rd Place, and Final each begin, they'll automatically take the top spot
+  and push older rounds down, with zero further code changes required. R32
+  keeps its explanatory subtitle (`r32_sub`, "results shown for
+  reference..."); other rounds don't. `ROUND_LABEL_KEY` now includes `R32`.
 - **Today's Matches highlight (Predict tab)**: `#today-highlight` container
   above the champion card, rendered by `buildTodayHighlight()`. Shows every
   match whose **tournament day** is "today" — critically, "tournament day" is
@@ -236,6 +248,20 @@ Match IDs must remain stable. Never renumber them. The Firestore results documen
 - `{ third }` = best 3rd-place qualifier
 - `{ W: matchId }` = winner of a previous match
 - `{ L: matchId }` = loser of a previous match (3rd place only)
+
+### ⚠️ KICKOFF time entry — verified July 2026 data bug
+Matches 89 (Paraguay-France) and 90 (Canada-Morocco) had their `KICKOFF`
+timestamps swapped — entered in the correct chronological order overall, but
+attached to the wrong match ID relative to which team pairing actually kicks
+off first. This wasn't caught until the "Today's Matches" highlight sorted
+by time and it didn't match the live broadcast. Fixed by swapping the two
+timestamps (89 is now 21:00 UTC, 90 is now 17:00 UTC). Every other R16
+match (91–96) was cross-checked against FIFA's official schedule screenshots
+and confirmed correct — this was isolated to 89/90, not systemic. **When
+entering or auditing `KICKOFF` data, cross-check "which ID is chronologically
+first" against "which ID's bracket slots resolve to the fixture that's
+actually first" — these can silently diverge since slot resolution
+(`KO_BRACKET`) and kickoff time are entered/maintained independently.**
 
 ---
 
@@ -532,4 +558,4 @@ stakes for a friend group; worth knowing if this ever needs hardening.
 
 ---
 
-*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added and reworked into a two-sided mirrored layout with Final styling, R32 tab renamed to Cuadro/Bracket, Today's Matches highlight added to Predict tab with venue-timezone-based day logic). Update this file whenever a significant architectural or design decision is made.*
+*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added and reworked into a two-sided mirrored layout with Final styling, R32 tab renamed to Cuadro/Bracket, Today's Matches highlight added to Predict tab with venue-timezone-based day logic, KICKOFF data bug fixed for matches 89/90/99/100/103 and rest of schedule verified against FIFA's official schedule, results list consolidated into a single auto-ordered-by-recency section). Update this file whenever a significant architectural or design decision is made.*
