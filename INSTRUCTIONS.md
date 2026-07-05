@@ -80,6 +80,14 @@ football-data.org API (live scores)
   `onSnapshot` listener as `buildRoundsList()` (both initial `boot()` render
   and live updates). Purely additive: no new Firestore fields, no changes to
   scoring or predictions.
+- **Score badges + winner highlight on bracket slots**: once a match is
+  decided (`liveResults[id].h != null`), each `.bracket-slot` gets a small
+  gold score badge (goals only, no penalty detail — that stays in the
+  results list below) and the winning side gets a gold border/glow. Badge
+  is `position:absolute` deliberately, so it overlays the existing 26px/40px
+  slot without changing bracket dimensions or disturbing the column-height/
+  connector-line math. Rendered inline inside `buildBracket()`, no new
+  function.
 - **Results list, auto-ordered by recency (Bracket tab, below the bracket
   graphic)**: `#rounds-list` container, rendered by `buildRoundsList()` —
   this **replaced and consolidated** the old separate `buildR32Tab()` +
@@ -558,4 +566,4 @@ stakes for a friend group; worth knowing if this ever needs hardening.
 
 ---
 
-*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added and reworked into a two-sided mirrored layout with Final styling, R32 tab renamed to Cuadro/Bracket, Today's Matches highlight added to Predict tab with venue-timezone-based day logic, KICKOFF data bug fixed for matches 89/90/99/100/103 and rest of schedule verified against FIFA's official schedule, results list consolidated into a single auto-ordered-by-recency section). Update this file whenever a significant architectural or design decision is made.*
+*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added and reworked into a two-sided mirrored layout with Final styling, R32 tab renamed to Cuadro/Bracket, Today's Matches highlight added to Predict tab with venue-timezone-based day logic, KICKOFF data bug fixed for matches 89/90/99/100/103 and rest of schedule verified against FIFA's official schedule, results list consolidated into a single auto-ordered-by-recency section, score badges + winner highlight added to bracket slots). Update this file whenever a significant architectural or design decision is made.*
