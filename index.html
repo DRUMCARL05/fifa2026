@@ -288,12 +288,7 @@ main{max-width:600px;margin:0 auto;padding:1rem 1rem 0}
       <div class="bracket-wrap">
         <div class="bracket-scroll" id="bracket-view"></div>
       </div>
-      <div style="margin-bottom:1rem">
-        <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px;margin-bottom:.3rem" data-i18n="r32_title">Round of 32</div>
-        <div style="font-size:.8rem;color:var(--muted);line-height:1.5" data-i18n="r32_sub">Results shown for reference. Predictions open from Round of 16.</div>
-      </div>
-      <div id="r32-list"></div>
-      <div id="extra-rounds-list"></div>
+      <div id="rounds-list"></div>
     </div>
 
     <!-- STANDINGS TAB -->
@@ -670,7 +665,7 @@ const STRINGS_EN={
   today_title:"Today's Matches",
   today_no_matches:"No matches today",
 };
-const ROUND_LABEL_KEY={R16:"round_r16",QF:"round_qf",SF:"round_sf","3P":"round_3p",F:"round_f"};
+const ROUND_LABEL_KEY={R32:"r32_title",R16:"round_r16",QF:"round_qf",SF:"round_sf","3P":"round_3p",F:"round_f"};
 
 /* ═══════════════════════════════════════════════
    STATE
@@ -751,8 +746,7 @@ async function boot(){
     else liveResults={};
     if(document.getElementById("app").style.display!=="none"){
       buildAllRounds();
-      buildR32Tab();
-      buildExtraRounds();
+      buildRoundsList();
       buildBracket();
       buildTodayHighlight();
       if(document.getElementById("tab-standings").classList.contains("on")) renderStandings();
@@ -770,8 +764,7 @@ async function boot(){
   document.getElementById("h-name").textContent=userName;
   buildChampSelect();
   buildAllRounds();
-  buildR32Tab();
-  buildExtraRounds();
+  buildRoundsList();
   buildBracket();
   buildTodayHighlight();
   updateProgress();
@@ -798,8 +791,7 @@ function applyTranslations(){
   if(document.getElementById("app").style.display!=="none"){
     buildChampSelect();
     buildAllRounds();
-    buildR32Tab();
-    buildExtraRounds();
+    buildRoundsList();
     buildTodayHighlight();
     if(document.getElementById("tab-standings").classList.contains("on")) renderStandings();
   }
@@ -1277,38 +1269,24 @@ function matchCardHtml(m){
     <div class="r32-away">${aLabel}</div>
   </div>`;
 }
-function buildExtraRounds(){
-  const el=document.getElementById("extra-rounds-list");
+function buildRoundsList(){
+  const el=document.getElementById("rounds-list");
   if(!el) return;
-  const rounds=["R16","QF","SF","3P","F"];
-  el.innerHTML=rounds.map(r=>{
+  const rounds=["R32","R16","QF","SF","3P","F"];
+  const sections=rounds.map(r=>{
     const matches=KO.filter(m=>m.r===r);
-    if(!matches.some(m=>hasStarted(m.id))) return ""; // reveals itself once the round begins
+    const startTimes=matches.map(m=>KICKOFF[m.id]?Date.parse(KICKOFF[m.id]):Infinity);
+    const started=startTimes.some(t=>t<=Date.now());
+    if(!started) return null; // reveals itself once the round begins
+    return {r, minStart:Math.min(...startTimes), matches};
+  }).filter(Boolean);
+  sections.sort((a,b)=>b.minStart-a.minStart); // most recently started phase first
+  el.innerHTML=sections.map(({r,matches})=>{
     const title=esc(t(ROUND_LABEL_KEY[r]));
+    const sub=r==="R32"?`<div style="font-size:.8rem;color:var(--muted);line-height:1.5;margin-top:.2rem">${esc(t("r32_sub"))}</div>`:"";
     return `<div style="margin:1.4rem 0 1rem">
-      <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px">${title}</div>
+      <div style="font-family:var(--display);font-size:1.45rem;letter-spacing:1px">${title}</div>${sub}
     </div>${matches.map(matchCardHtml).join("")}`;
-  }).join("");
-}
-
-function buildR32Tab(){
-  const r32=KO.filter(m=>m.r==="R32");
-  document.getElementById("r32-list").innerHTML=r32.map(m=>{
-    const res=liveResults[m.id];
-    const kick=fmtKick(m.id);
-    const hCode=resolveSlot(m.s[0]), aCode=resolveSlot(m.s[1]);
-    const hDisp=hCode?teamName(hCode):labelSlot(m.s[0]);
-    const aDisp=aCode?teamName(aCode):labelSlot(m.s[1]);
-    const hLabel=`${hCode&&FLAG[hCode]?FLAG[hCode]+" ":""}${esc(hDisp)}`;
-    const aLabel=`${aCode&&FLAG[aCode]?FLAG[aCode]+" ":""}${esc(aDisp)}`;
-    const pending=!res||res.h==null;
-    const scoreStr=pending?(hasStarted(m.id)?t("tbc"):t("vs")):`${res.h}–${res.a}${res.pen?" ("+res.pen.toUpperCase()+"PKs)":""}`;
-    return `<div class="r32-card ${pending?"r32-pending":""}">
-      <div class="r32-date">${kick} · #${m.id}</div>
-      <div class="r32-home">${hLabel}</div>
-      <div class="r32-score">${scoreStr}</div>
-      <div class="r32-away">${aLabel}</div>
-    </div>`;
   }).join("");
 }
 
