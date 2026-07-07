@@ -468,6 +468,21 @@ Several names differ from what you might expect:
 - `"Cape Verde Islands"` (not "Cabo Verde")
 - `"Ivory Coast"` (correct — API does use the English name)
 
+**⚠️ GROUP_QUALIFIERS_EN team name mismatch — verified July 2026 data bug**
+`GROUP_QUALIFIERS_EN.D` listed the group winner as `"USA"` instead of `"United
+States"`, unlike `R32_TEAMS` which used the correct API string. `teamsMatch()`
+only translates English↔Spanish via `TEAM_MAP` — it does not reconcile English
+name variants — so this single entry meant match 94 (USA vs Belgium, R16)
+could never resolve a team-name match. It silently never appeared in any
+Cloud Function run's "written" list from the moment R16 began, and wasn't
+caught until the published result looked wrong (blank 0-0) after the match had
+finished. Fixed by changing the entry to `D:{1:"United States", 2:"Australia"}`
+and redeploying; match 94 was also manually corrected and locked
+(`autoFetched: false`) with the real result, USA 1 – Belgium 4. **When
+adding/auditing `GROUP_QUALIFIERS_EN` or `THIRD_QUALIFIERS_EN` entries,
+cross-check every name against the exact string football-data.org uses (see
+`R32_TEAMS` above for known-correct examples), not the common/short name.**
+
 Do not change these strings without re-verifying against the live API response.
 
 **Why is `index.html` bilingual but `admin.html` isn't?**
