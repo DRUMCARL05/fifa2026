@@ -204,7 +204,7 @@ const GROUP_QUALIFIERS_EN = {
   A:{1:"Mexico",        2:"South Africa"},
   B:{1:"Switzerland",   2:"Canada"},
   C:{1:"Brazil",        2:"Morocco"},
-  D:{1:"USA",           2:"Australia"},
+  D:{1:"United States", 2:"Australia"},
   E:{1:"Germany",       2:"Ivory Coast"},
   F:{1:"Netherlands",   2:"Japan"},
   G:{1:"Belgium",       2:"Egypt"},
