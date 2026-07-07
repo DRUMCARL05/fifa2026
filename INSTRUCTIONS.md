@@ -423,6 +423,22 @@ Running `firebase deploy --only functions` from inside `~/Documents/GitHub/fifa2
 
 ## Known Constraints & Decisions
 
+**Incomplete predictions defaulting to 0 (fixed July 2026)**
+Previously, a player could tap the stepper for one team only (e.g. enter France's
+score but never touch Paraguay's), leaving that side `null` in Firestore.
+`scoreMatch()` treats any `null` field as an incomplete prediction and awards 0
+points — even if the entered side alone would have implied a correct-team pick.
+This was counterintuitive: pressing "−" to manually set a score to 0 isn't
+obvious. Fixed in `window.step()` (`index.html`) — the moment either side of a
+match is tapped, the untouched sibling now defaults to 0 automatically (both
+visually and in the saved data), rather than staying `null`.
+**Scope of the fix:** only applies going forward, to new interactions. It does
+**not** retroactively repair predictions already saved with one side `null` —
+those still score 0 and would need a manual Firestore correction if found
+(admin.html has no UI for editing individual player predictions). `admin.html`'s
+own stepper (`astep`, used for entering real match results) was intentionally
+left unchanged — this issue only affects player predictions.
+
 **Why no shared leaderboard via JSON export?**
 Firebase Firestore gives every player a real-time live leaderboard. The export/import approach was considered and rejected in favour of this.
 
@@ -566,4 +582,4 @@ stakes for a friend group; worth knowing if this ever needs hardening.
 
 ---
 
-*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added and reworked into a two-sided mirrored layout with Final styling, R32 tab renamed to Cuadro/Bracket, Today's Matches highlight added to Predict tab with venue-timezone-based day logic, KICKOFF data bug fixed for matches 89/90/99/100/103 and rest of schedule verified against FIFA's official schedule, results list consolidated into a single auto-ordered-by-recency section, score badges + winner highlight added to bracket slots). Update this file whenever a significant architectural or design decision is made.*
+*Last updated: July 2026 (bilingual support, Cloud Function team-name matching fix with verified API names, admin live-refresh fix, Firestore rules tightened, deployment workflow clarified — Firebase project folder is separate from GitHub repo, visual bracket added and reworked into a two-sided mirrored layout with Final styling, R32 tab renamed to Cuadro/Bracket, Today's Matches highlight added to Predict tab with venue-timezone-based day logic, KICKOFF data bug fixed for matches 89/90/99/100/103 and rest of schedule verified against FIFA's official schedule, results list consolidated into a single auto-ordered-by-recency section, score badges + winner highlight added to bracket slots, `window.step()` in index.html fixed so an untouched sibling score defaults to 0 instead of null once its match is interacted with — prevents incomplete predictions scoring 0 unexpectedly). Update this file whenever a significant architectural or design decision is made.*
